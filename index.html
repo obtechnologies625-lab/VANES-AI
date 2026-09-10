@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A focused AI study companion." />
+    <title>VANES AI — Study smarter</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Primary navigation">
+        <a class="brand" href="#dashboard" aria-label="VANES AI home"><span class="brand-mark">V</span><span>vanes<span class="brand-ai">ai</span></span></a>
+        <nav class="nav-links">
+          <a class="nav-link active" href="#dashboard" data-view="dashboard"><span>▦</span>Dashboard</a>
+          <a class="nav-link" href="#subjects" data-view="subjects"><span>◈</span>My subjects</a>
+          <a class="nav-link" href="#planner" data-view="planner"><span>◷</span>Study planner</a>
+          <a class="nav-link" href="#coach" data-view="coach"><span>✦</span>AI study coach</a>
+        </nav>
+        <div class="sidebar-bottom"><button class="theme-button" id="themeToggle" aria-label="Toggle colour theme">☾ <span>Dark mode</span></button><div class="profile"><div class="avatar">AM</div><div><strong>Alex Morgan</strong><small>Focused learner</small></div><button class="more-button" aria-label="Profile options">•••</button></div></div>
+      </aside>
+
+      <main>
+        <header class="mobile-header"><a class="brand" href="#dashboard"><span class="brand-mark">V</span><span>vanes<span class="brand-ai">ai</span></span></a><button id="mobileMenu" aria-label="Open navigation">☰</button></header>
+
+        <section class="view active" id="dashboard">
+          <div class="topbar"><div><p class="eyebrow">THURSDAY, SEPTEMBER 10</p><h1>Make today count, Alex.</h1><p class="subtle">A small, focused session can make a meaningful difference.</p></div><button class="icon-button" aria-label="Notifications">♢<i></i></button></div>
+          <section class="hero-card"><div class="hero-copy"><p class="eyebrow">YOUR FOCUS FOR TODAY</p><h2>Calculus: Integration techniques</h2><p>Build confidence with substitution and integration by parts through guided practice.</p><div class="hero-meta"><span>◷ 45 min</span><span>◉ Intermediate</span></div><button class="primary-button" data-open-subject="Calculus">Start focus session <span>→</span></button></div><div class="orbit-illustration" aria-hidden="true"><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div><div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div><div class="equation">∫</div></div></section>
+          <section class="stats-grid"><article><span class="stat-icon peach">⌁</span><div><strong id="minutesStat">142 min</strong><p>Study time this week</p><small class="positive">↑ 18% <em>from last week</em></small></div></article><article><span class="stat-icon yellow">♨</span><div><strong>6 days</strong><p>Current streak</p><small>Keep it going!</small></div></article><article><span class="stat-icon lavender">◌</span><div><strong id="progressStat">68%</strong><p>Weekly goal</p><div class="mini-progress"><span id="progressBar"></span></div></div></article></section>
+          <section class="dashboard-grid"><div class="panel upcoming"><div class="panel-heading"><div><p class="eyebrow">UP NEXT</p><h2>Continue learning</h2></div><button class="text-button" data-view-target="subjects">View all →</button></div><div class="topic-list" id="topicList"></div></div><div class="panel activity"><div class="panel-heading"><div><p class="eyebrow">WEEKLY ACTIVITY</p><h2>Your rhythm</h2></div><span class="pill">This week</span></div><div class="chart" aria-label="Study minutes from Monday through Sunday"><div class="chart-bars"><span style="height:42%"><i>35m</i></span><span style="height:62%"><i>52m</i></span><span style="height:35%"><i>28m</i></span><span style="height:82%"><i>68m</i></span><span class="today" style="height:55%"><i>46m</i></span><span style="height:20%"><i>—</i></span><span style="height:15%"><i>—</i></span></div><div class="chart-days"><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span><span>S</span></div></div><div class="activity-footer"><span>✦ Your most productive time is <strong>9–11 AM</strong></span></div></div></section>
+        </section>
+
+        <section class="view" id="subjects"><div class="topbar"><div><p class="eyebrow">LEARNING LIBRARY</p><h1>My subjects</h1><p class="subtle">Pick up where you left off, or begin a new topic.</p></div><button class="primary-button" id="newSubject">+ Add subject</button></div><div class="subject-grid" id="subjectGrid"></div></section>
+
+        <section class="view" id="planner"><div class="topbar"><div><p class="eyebrow">PERSONALISED ROUTINE</p><h1>Build a study plan</h1><p class="subtle">Turn your available time into a clear, manageable next step.</p></div></div><div class="planner-layout"><form class="panel plan-form" id="planForm"><label>What are you studying?<input name="subject" required placeholder="e.g. Organic chemistry" /></label><label>What is your goal?<select name="goal"><option>Prepare for an exam</option><option>Understand a difficult concept</option><option>Finish an assignment</option><option>Build a daily habit</option></select></label><label>How much time do you have?<select name="time"><option value="25">25 minutes</option><option value="45" selected>45 minutes</option><option value="60">1 hour</option><option value="90">90 minutes</option></select></label><button class="primary-button" type="submit">Create my plan <span>→</span></button></form><div class="panel plan-result" id="planResult"><div class="empty-illustration">✦</div><h2>Your focused plan will appear here.</h2><p>Tell VANES what you are working on and we will organise a session you can start right away.</p></div></div></section>
+
+        <section class="view" id="coach"><div class="topbar"><div><p class="eyebrow">YOUR THINKING PARTNER</p><h1>AI study coach</h1><p class="subtle">Ask for an explanation, a practice question, or a fresh way to approach a topic.</p></div></div><div class="coach-layout"><div class="coach-intro"><div class="coach-star">✦</div><h2>What are you curious about?</h2><p>I'll help you break it down, one idea at a time.</p><div class="prompt-chips"><button data-prompt="Explain integration by parts simply">Explain a concept simply</button><button data-prompt="Give me a practice question about the French Revolution">Give me a practice question</button><button data-prompt="Help me plan how to study for a biology exam">Help me make a study plan</button></div></div><div class="chat-panel"><div class="messages" id="messages"><div class="message coach-message"><span>✦</span><p>Hi Alex! What would you like to learn together today?</p></div></div><form id="chatForm"><input id="chatInput" autocomplete="off" placeholder="Ask your study coach anything..." /><button aria-label="Send message">↑</button></form></div></div></section>
+
+        <section class="view workspace" id="workspace"><button class="back-button" data-view-target="subjects">← Back to subjects</button><div class="workspace-heading"><div><p class="eyebrow" id="workspaceLabel">SUBJECT</p><h1 id="workspaceTitle">Calculus</h1><p class="subtle" id="workspaceDescription"></p></div><button class="primary-button" id="completeSession">Mark session complete ✓</button></div><div class="workspace-grid"><article class="panel"><p class="eyebrow">SESSION NOTES</p><textarea id="notes" placeholder="Capture key ideas, questions, and reminders here..."></textarea><div class="note-footer"><span id="saveStatus">Notes save automatically</span><button class="text-button" id="clearNotes">Clear notes</button></div></article><article class="panel session-card"><p class="eyebrow">TODAY'S SESSION</p><h2 id="sessionTitle">Integration techniques</h2><ol id="sessionSteps"></ol><button class="secondary-button" data-view-target="coach">Ask the study coach →</button></article></div></section>
+      </main>
+    </div>
+    <div class="toast" id="toast" role="status"></div>
+    <script src="app.js"></script>
+  </body>
+</html>
