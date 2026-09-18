@@ -41,7 +41,7 @@ function boot(){
   try{
    const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(payload),signal:aborter.signal});
    const raw=await r.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
-   if(!r.ok)throw new Error(String(data?.error||data?.detail||raw||('AI service returned HTTP '+r.status)).slice(0,800));
+   if(!r.ok)throw new Error(String(data?.detail||data?.error||raw||('AI service returned HTTP '+r.status)).slice(0,800));
    const text=data?.choices?.[0]?.message?.content??data?.choices?.[0]?.text??data?.output_text??'';
    if(typeof text!=='string'||!text.trim())throw new Error('The AI service returned no answer text.');
    return text.trim();
