@@ -100,45 +100,44 @@ function style(){if(document.getElementById('vanes-settings-style'))return;const
 @media(max-width:560px){#settings .settings-ios-head{padding:23px 20px;border-radius:23px}#settings .settings-ios-head h1{font-size:30px}#settings .settings-orb{width:55px;height:55px}.ios-row select{width:140px!important;flex-basis:140px!important}.settings-card{padding:17px!important}}
 `;document.head.appendChild(s)}
 async function send(type,payload,status){
+  if(!status)return {ok:false};
   status.textContent='Sending securely…';
   try{
-    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,payload})});
+    const endpoint=window.VANES_CONTACT_ENDPOINT||'/api/contact';
+    const r=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,payload})});
     const d=await r.json().catch(()=>({}));
-    if(!r.ok){
-      if(r.status===429||d?.detail?.includes('FormSubmit HTTP 429')){
-        status.textContent='Using direct delivery fallback…';
-        const direct=await directFormSubmit(type,payload);
-        window.VANES_TRACK?.('settings_'+type+'_submitted',{method:'formsubmit-direct'});
-        status.textContent=direct?.message||'Sent successfully. Thank you.';
-        return direct;
-      }
-      const detail=d.detail?\` — \${d.detail}\`:'';
-      throw new Error((d.error||'Request could not be sent.')+detail)
-    }
+    if(!r.ok){const detail=d?.detail?' — '+d.detail:'';throw new Error((d?.error||'Request could not be sent.')+detail)}
     window.VANES_TRACK?.('settings_'+type+'_submitted',{method:payload?.method||null});
     status.textContent=d.message||'Sent successfully. Thank you.';
-    return d
-  }catch(e){status.textContent=e.message||'Unable to send right now.'}
+    return d;
+  }catch(e){const message=e?.message||'Unable to send right now.';status.textContent=message;return {ok:false,error:message}}
 }
+function bindClick(id,handler){const el=document.getElementById(id);if(el)el.onclick=handler;return el}
+function bindSubmit(id,handler){const form=document.getElementById(id);if(form)form.onsubmit=handler;return form}
+function value(id){return String(document.getElementById(id)?.value||'').trim()}
 function wire(){
  const x=read(), theme=document.querySelector('#setTheme');
- document.querySelector('#settingsProfileSummary').textContent=profileSummary();
- theme.value=x.theme||localStorage.getItem('vanes-theme')||'light';theme.onchange=()=>{const v=read();v.theme=theme.value;save(v);applyTheme(theme.value)};
- ['setStyle','setLanguage','setDetail'].forEach(id=>{const el=document.getElementById(id);el.value=id==='setStyle'?x.style:id==='setLanguage'?x.language:x.detail});
- document.getElementById('saveAiSettings').onclick=()=>{const v=read();v.style=document.getElementById('setStyle').value;v.language=document.getElementById('setLanguage').value;v.detail=document.getElementById('setDetail').value;save(v);document.getElementById('settingsSaved').textContent='AI preferences saved.'};
- const edit=()=>{document.getElementById('changeName')?.click()};
- document.getElementById('settingsEditProfile').onclick=edit;document.getElementById('settingsOpenProfile').onclick=edit;
- const ns=notifyState();document.getElementById('notifyInterval').value=String(ns.minutes||60);updateNotificationUI();
- document.getElementById('settingsNotifyButton').onclick=toggleNotifications;document.getElementById('settingsOpenNotifications').onclick=()=>document.getElementById('settingsNotifyButton').click();
- document.getElementById('notifyInterval').onchange=()=>{const v=notifyState();v.minutes=Number(document.getElementById('notifyInterval').value);localStorage.setItem('vanes-notification-settings-v1',JSON.stringify(v));updateNotificationUI()};
- document.querySelectorAll('.amounts button').forEach(b=>b.onclick=()=>document.getElementById('donateAmount').value=b.dataset.amount);
- document.getElementById('clearLocalData').onclick=()=>{if(confirm('Clear local VANES data on this device?')){['vanes-user-name','vanes-learner-profile-v1','vanes-learner-profile-v2','vanes-chat-conversations-v1','vanes-chat-active-v1','vanes-saved-study-plans-v1','vanes-study-tracking-v2','vanes-study-summaries-v1','vanes-daily-streak-v2','vanes-settings-v1','vanes-theme','vanes-notification-settings-v1','vanes-anonymous-id-v1','vanes-profile-picture-v1'].forEach(k=>localStorage.removeItem(k));location.reload()}};
- document.getElementById('donateForm').onsubmit=async e=>{e.preventDefault();const f=e.currentTarget;if(!f.reportValidity())return;const amount=Number(document.getElementById('donateAmount').value);if(!amount||amount<500){document.getElementById('donateStatus').textContent='Enter a valid donation amount.';return}await send('donation',{amount,currency:'TZS',method:document.getElementById('donateMethod').value,name:document.getElementById('donorName').value.trim(),phone:document.getElementById('donorPhone').value.trim(),email:document.getElementById('donorEmail').value.trim()},document.getElementById('donateStatus'))};
- document.getElementById('familyForm').onsubmit=e=>{e.preventDefault();const f=e.currentTarget;if(!f.reportValidity())return;return send('family',{name:document.getElementById('familyName').value.trim(),phone:document.getElementById('familyPhone').value.trim(),email:document.getElementById('familyEmail').value.trim()},document.getElementById('familyStatus'))};
- document.getElementById('fieldForm').onsubmit=(e)=>{e.preventDefault();const form=e.currentTarget;if(!form.reportValidity())return;return send('field',{name:document.getElementById('fieldName').value.trim(),phone:document.getElementById('fieldPhone').value.trim(),email:document.getElementById('fieldEmail').value.trim()},document.getElementById('fieldStatus'))};
- document.getElementById('feedbackForm').onsubmit=e=>{e.preventDefault();const f=e.currentTarget;if(!f.reportValidity())return;const text=document.getElementById('feedbackText').value.trim();return send('feedback',{comment:text,email:document.getElementById('feedbackEmail').value.trim()},document.getElementById('feedbackStatus'))};
-}
-function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
+ const summary=document.querySelector('#settingsProfileSummary');if(summary)summary.textContent=profileSummary();
+ if(theme){theme.value=x.theme||localStorage.getItem('vanes-theme')||'light';theme.onchange=()=>{const v=read();v.theme=theme.value;save(v);applyTheme(theme.value)}}
+ ['setStyle','setLanguage','setDetail'].forEach(id=>{const el=document.getElementById(id);if(el)el.value=id==='setStyle'?x.style:id==='setLanguage'?x.language:x.detail});
+ bindClick('saveAiSettings',()=>{const v=read();v.style=value('setStyle')||'balanced';v.language=value('setLanguage')||'Auto';v.detail=value('setDetail')||'standard';save(v);const saved=document.getElementById('settingsSaved');if(saved)saved.textContent='AI preferences saved.'});
+ const edit=()=>document.getElementById('changeName')?.click();bindClick('settingsEditProfile',edit);bindClick('settingsOpenProfile',edit);
+ const ns=notifyState(), interval=document.getElementById('notifyInterval');if(interval)interval.value=String(ns.minutes||60);updateNotificationUI();
+ bindClick('settingsNotifyButton',toggleNotifications);bindClick('settingsOpenNotifications',()=>document.getElementById('settingsNotifyButton')?.click());
+ if(interval)interval.onchange=()=>{const v=notifyState();v.minutes=Number(interval.value);localStorage.setItem('vanes-notification-settings-v1',JSON.stringify(v));updateNotificationUI()};
+ document.querySelectorAll('#settings .amounts button').forEach(b=>b.onclick=()=>{const amount=document.getElementById('donateAmount');if(amount)amount.value=b.dataset.amount});
+ bindClick('clearLocalData',()=>{if(confirm('Clear local VANES data on this device?')){['vanes-user-name','vanes-learner-profile-v1','vanes-learner-profile-v2','vanes-chat-conversations-v1','vanes-chat-active-v1','vanes-saved-study-plans-v1','vanes-study-tracking-v2','vanes-study-summaries-v1','vanes-daily-streak-v2','vanes-settings-v1','vanes-theme','vanes-notification-settings-v1','vanes-anonymous-id-v1','vanes-profile-picture-v1'].forEach(k=>localStorage.removeItem(k));location.reload()}});
+ const donationSubmit=async e=>{e?.preventDefault();const amount=Number(value('donateAmount')),status=document.getElementById('donateStatus');if(!amount||amount<500){if(status)status.textContent='Enter a valid donation amount (minimum TZS 500).';return}return send('donation',{amount,currency:'TZS',method:value('donateMethod')||'mobile',name:value('donorName'),phone:value('donorPhone'),email:value('donorEmail')},status)};
+ bindSubmit('donateForm',donationSubmit);bindClick('donateButton',donationSubmit);
+ const familySubmit=async e=>{e?.preventDefault();const status=document.getElementById('familyStatus'),p={name:value('familyName'),phone:value('familyPhone'),email:value('familyEmail')};if(!p.name||!p.phone||!p.email){if(status)status.textContent='Please complete your name, phone number and email.';return}return send('family',p,status)};
+ bindSubmit('familyForm',familySubmit);bindClick('familyButton',familySubmit);
+ const fieldSubmit=async e=>{e?.preventDefault();const status=document.getElementById('fieldStatus'),p={name:value('fieldName'),phone:value('fieldPhone'),email:value('fieldEmail')};if(!p.name||!p.phone||!p.email){if(status)status.textContent='Please complete your name, phone number and email.';return}return send('field',p,status)};
+ bindSubmit('fieldForm',fieldSubmit);bindClick('fieldButton',fieldSubmit);
+ let selectedRating=0;const ratingButtons=document.querySelectorAll('#settings .rating-row button');
+ ratingButtons.forEach((b,i)=>b.onclick=()=>{selectedRating=i+1;ratingButtons.forEach((x,j)=>x.setAttribute('aria-pressed',j<=i?'true':'false'));const status=document.getElementById('feedbackStatus');if(status)status.textContent='Rating selected: '+selectedRating+'/5. Add a comment if you want, then send.'});
+ const feedbackSubmit=async e=>{e?.preventDefault();const status=document.getElementById('feedbackStatus'),comment=value('feedbackText'),email=value('feedbackEmail');if(!selectedRating&&!comment){if(status)status.textContent='Choose a rating or enter a comment first.';return}if(selectedRating)return send('rating',{rating:selectedRating,comment,email},status);return send('feedback',{comment,email},status)};
+ bindSubmit('feedbackForm',feedbackSubmit);bindClick('feedbackButton',feedbackSubmit);
+}function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
 function ensureSettings(){
   const section=document.getElementById('settings');
   if(!section){
