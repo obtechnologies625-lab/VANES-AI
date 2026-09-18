@@ -167,11 +167,39 @@ function wire(){
  document.getElementById('feedbackButton').onclick=()=>{const text=document.getElementById('feedbackText').value.trim();if(!text)return document.getElementById('feedbackStatus').textContent='Please enter your comment or suggestion.';return send('feedback',{comment:text,email:document.getElementById('feedbackEmail').value.trim()},document.getElementById('feedbackStatus'))};
 }
 function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
+function ensureSettings(){
+  const section=document.getElementById('settings');
+  if(!section){
+    inject();
+    return;
+  }
+  if(!section.querySelector('.settings-grid')){
+    inject();
+    return;
+  }
+  style();
+  wire();
+}
 function boot(){
-  inject();
-  /* If another script changed the DOM during startup, make sure the Settings
-     view is present before routing to it. */
-  if(!document.getElementById('settings')) setTimeout(inject,0);
-  document.addEventListener('click',e=>{const a=e.target.closest?.('[data-view="settings"]');if(a){e.preventDefault();go('settings')}},true);window.addEventListener('hashchange',route);route();const q=read();applyTheme(q.theme||localStorage.getItem('vanes-theme')||'light')}
+  /* Settings is a first-class view. Keep it present and re-bind it after
+     other VANES modules finish their startup work. */
+  ensureSettings();
+  setTimeout(ensureSettings,50);
+  setTimeout(ensureSettings,500);
+  setTimeout(ensureSettings,1500);
+  document.addEventListener('click',e=>{
+    const a=e.target.closest?.('[data-view="settings"],[data-view-target="settings"]');
+    if(a){
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      ensureSettings();
+      go('settings');
+    }
+  },true);
+  window.addEventListener('hashchange',route);
+  route();
+  const q=read();
+  applyTheme(q.theme||localStorage.getItem('vanes-theme')||'light');
+}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
