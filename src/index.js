@@ -7,7 +7,7 @@ const DEFAULT_RUNWAY_MODEL = "gen3a_turbo";
 // Keep chat requests below the user's remaining OpenRouter credit allowance.
 // OpenRouter can reject a request before generation when max_tokens exceeds the
 // currently affordable amount, so VANES uses a conservative default.
-const DEFAULT_MAX_TOKENS = 1400;
+const DEFAULT_MAX_TOKENS = 1200;
 const IMAGE_MAX_TOKENS = 200;
 const MAX_BODY = 9000000;
 function json(data,status=200,extra={}){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...extra}})}
@@ -31,12 +31,12 @@ async function handleChat(request,env){
   const messages=body.messages.slice(-18);
   const hasImage=messages.some(m=>Array.isArray(m?.content)&&m.content.some(p=>p?.type==="image_url"||p?.type==="input_image"));
   const models=hasImage
-    ? ["google/gemma-3-27b-it:free","openrouter/free"]
-    : ["qwen/qwen3-32b:free","meta-llama/llama-3.3-70b-instruct:free","google/gemma-3-27b-it:free","openrouter/free"];
+    ? ["openrouter/free","google/gemma-3-27b-it:free"]
+    : ["openrouter/free","qwen/qwen3-32b:free","meta-llama/llama-3.3-70b-instruct:free","google/gemma-3-27b-it:free"];
   const requested=typeof body.model==="string"?body.model.trim():"";
   const ordered=requested&&models.includes(requested)?[requested,...models.filter(m=>m!==requested)]:models;
   const requestedTokens=Number(body.max_tokens);
-  const maxTokens=Number.isFinite(requestedTokens)?Math.min(Math.max(requestedTokens,256),1600):1400;
+  const maxTokens=Number.isFinite(requestedTokens)?Math.min(Math.max(requestedTokens,256),1200):1200;
   let lastStatus=503,lastDetail="No model returned an answer.";
 
   async function callModel(model,chatMessages,tokens){
