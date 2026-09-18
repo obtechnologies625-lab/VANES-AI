@@ -57,11 +57,13 @@ export async function handleContact(request,env){
   const text=textFor(type,p);
   const subject={donation:"VANES donation request",family:"VANES family membership request",field:"OB Tech-Labs field interest",feedback:"VANES app feedback",rating:"VANES user rating"}[type];
   const ownerTransactionText=type==="donation"&&env.OWNER_AIRTEL_NUMBER?text+`\n\nPRIVATE OWNER PAYMENT ROUTING: ${OWNER_AIRTEL_NETWORK} ${env.OWNER_AIRTEL_NUMBER}`:text;
-  let dbResult={ok:false};\n  if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){}}\n  const [emailResult,smsResult]=await Promise.all([email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
+  let dbResult={ok:false};\n  if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){}}
+  const [emailResult,smsResult]=await Promise.all([email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
   if(!emailResult.ok&&!smsResult.ok&&!dbResult.ok){
     const details=[emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
     return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503);
   }
-  if(type==="donation")return json({ok:true,message:emailResult.ok?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});\n  if(type==="rating")return json({ok:true,message:emailResult.ok?"Rating received. Thank you for helping improve VANES.":"Rating saved for processing. Thank you."});
+  if(type==="donation")return json({ok:true,message:emailResult.ok?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
+  if(type==="rating")return json({ok:true,message:emailResult.ok?"Rating received. Thank you for helping improve VANES.":"Rating saved for processing. Thank you."});
   return json({ok:true,message:emailResult.ok?"Sent to OB Technologies. Thank you.":"Request sent through the configured notification channel."});
 }
