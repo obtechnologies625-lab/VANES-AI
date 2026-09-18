@@ -63,28 +63,64 @@ function inject(){
 }
 function style(){if(document.getElementById('vanes-settings-style'))return;const s=document.createElement('style');s.id='vanes-settings-style';s.textContent=`#settings .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.settings-card{display:grid;gap:11px}.settings-card label{display:grid;gap:6px;font-size:13px;font-weight:700}.settings-card input,.settings-card select,.settings-card textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d8dbe3;border-radius:11px;background:#fff;color:#111;font:inherit}.settings-card textarea{min-height:120px;resize:vertical}.amounts{display:flex;flex-wrap:wrap;gap:8px}.amounts button{border:1px solid #d8dbe3;background:#fff;color:#111;border-radius:10px;padding:9px 12px;cursor:pointer}.settings-status{min-height:22px;font-size:13px;font-weight:700}.settings-help{font-size:12px;opacity:.75;line-height:1.5;margin:0}.settings-card h2{margin:0}.settings-card>.secondary-button,.settings-card>.primary-button{width:100%}@media(max-width:800px){#settings .settings-grid{grid-template-columns:1fr}}`;document.head.appendChild(s)}
 async function directFormSubmit(type,payload){
-  const subject={donation:'VANES donation request',family:'VANES family membership request',field:'OB Tech-Labs field interest',feedback:'VANES app feedback'}[type]||'VANES request';
-  const message=type==='donation'?\`VANES DONATION REQUEST
-Amount: \${payload.amount} \${payload.currency||'TZS'}
-Method: \${payload.method||''}
-Name: \${payload.name||''}
-Phone: \${payload.phone||''}
-Email: \${payload.email||''}\`:
-    type==='family'?\`VANES FAMILY MEMBERSHIP REQUEST
-Name: \${payload.name||''}
-Phone: \${payload.phone||''}
-Email: \${payload.email||''}\`:
-    type==='field'?\`OB TECH-LABS FIELD INTEREST
-Name: \${payload.name||''}
-Phone: \${payload.phone||''}
-Email: \${payload.email||''}\`:
-    \`VANES FEEDBACK
-Comment: \${payload.comment||''}
-Email: \${payload.email||''}\`;
-  const form=new URLSearchParams({name:payload.name||'',email:payload.email||'',phone:payload.phone||'',subject,message,_captcha:'false',_template:'table'});
-  const r=await fetch('https://formsubmit.co/ajax/obtechnologies625@gmail.com',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});
-  const raw=await r.text();let d={};try{d=raw?JSON.parse(raw):{}}catch{}
-  if(!r.ok||d.success===false)throw new Error(\`Direct FormSubmit HTTP \${r.status}: \${d.message||d.error||raw||'Request failed.'}\`);
+  const subjects={
+    donation:'VANES donation request',
+    family:'VANES family membership request',
+    field:'OB Tech-Labs field interest',
+    feedback:'VANES app feedback'
+  };
+  const subject=subjects[type]||'VANES request';
+  let message='';
+  if(type==='donation'){
+    message=[
+      'VANES DONATION REQUEST',
+      'Amount: '+(payload.amount||'')+' '+(payload.currency||'TZS'),
+      'Method: '+(payload.method||''),
+      'Name: '+(payload.name||''),
+      'Phone: '+(payload.phone||''),
+      'Email: '+(payload.email||'')
+    ].join('\\n');
+  }else if(type==='family'){
+    message=[
+      'VANES FAMILY MEMBERSHIP REQUEST',
+      'Name: '+(payload.name||''),
+      'Phone: '+(payload.phone||''),
+      'Email: '+(payload.email||'')
+    ].join('\\n');
+  }else if(type==='field'){
+    message=[
+      'OB TECH-LABS FIELD INTEREST',
+      'Name: '+(payload.name||''),
+      'Phone: '+(payload.phone||''),
+      'Email: '+(payload.email||'')
+    ].join('\\n');
+  }else{
+    message=[
+      'VANES FEEDBACK',
+      'Comment: '+(payload.comment||''),
+      'Email: '+(payload.email||'')
+    ].join('\\n');
+  }
+  const form=new URLSearchParams({
+    name:payload.name||'',
+    email:payload.email||'',
+    phone:payload.phone||'',
+    subject,
+    message,
+    _captcha:'false',
+    _template:'table'
+  });
+  const r=await fetch('https://formsubmit.co/ajax/obtechnologies625@gmail.com',{
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:form
+  });
+  const raw=await r.text();
+  let d={};
+  try{d=raw?JSON.parse(raw):{}}catch(_){}
+  if(!r.ok||d.success===false){
+    throw new Error('Direct FormSubmit HTTP '+r.status+': '+(d.message||d.error||raw||'Request failed.'));
+  }
   return d;
 }
 async function send(type,payload,status){
