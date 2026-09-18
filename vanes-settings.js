@@ -45,7 +45,7 @@ function inject(){
      legacy fallback when no Settings section exists. */
   const existing=document.getElementById('settings');
   if(existing){
-    if(existing.querySelector('.settings-grid')){style();wire();return;}
+    if(existing.querySelector('.settings-grid')||existing.querySelector('.settings-main')){style();wire();return;}
   }
   const nav=document.querySelector('.nav-links');
   if(nav&&!nav.querySelector('[data-view="settings"]')){const a=document.createElement('a');a.className='nav-link';a.href='#settings';a.dataset.view='settings';a.innerHTML='<span>⚙</span>Settings';nav.appendChild(a);}
@@ -144,7 +144,7 @@ function ensureSettings(){
     inject();
     return;
   }
-  if(!section.querySelector('.settings-grid')){
+  if(!section.querySelector('.settings-grid')&&!section.querySelector('.settings-main')){
     inject();
     return;
   }
