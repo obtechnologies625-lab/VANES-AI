@@ -40,9 +40,13 @@ async function toggleNotifications(){
 }
 function profileSummary(){const p=profile();if(!p)return 'No learner profile saved yet.';return `${p.name} · ${p.level}${p.combination?' · '+p.combination:''}`}
 function inject(){
-  /* Settings is a single persistent view. The previous guard looked for a
-     non-existent id, which allowed duplicate/empty settings views to build up. */
-  if(document.getElementById('settings'))return;
+  /* Settings markup is now part of index.html so it cannot disappear when
+     dynamic scripts race during startup. Only create it dynamically as a
+     legacy fallback when no Settings section exists. */
+  const existing=document.getElementById('settings');
+  if(existing){
+    if(existing.querySelector('.settings-grid')){style();wire();return;}
+  }
   const nav=document.querySelector('.nav-links');
   if(nav&&!nav.querySelector('[data-view="settings"]')){const a=document.createElement('a');a.className='nav-link';a.href='#settings';a.dataset.view='settings';a.innerHTML='<span>⚙</span>Settings';nav.appendChild(a);}
   const main=document.querySelector('main');if(!main)return;
