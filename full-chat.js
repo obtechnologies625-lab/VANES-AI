@@ -53,7 +53,7 @@ function boot(){
   const msgs=history.filter(m=>m.role==='user').slice(-12).map(m=>({role:'user',content:m.text}));
   if(imageData)msgs[msgs.length-1].content=[{type:'text',text:question||'Analyse this study image carefully and explain what you find.'},{type:'image_url',image_url:{url:imageData}}];
   try{
-   pending.text=await ask({model:'gemini-1.5-flash',messages:[{role:'system',content:systemPrompt()},...msgs],max_tokens:1400});
+   pending.text=await ask({model:'gemini-2.5-flash',messages:[{role:'system',content:systemPrompt()},...msgs],max_tokens:1400});
    pending.pending=false;input.value='';imageData='';const p=document.querySelector('#imagePreview');if(p){p.hidden=true;p.innerHTML=''}save();render();status('Ready');
   }catch(e){pending.pending=false;pending.text='I could not complete that response. '+(e.name==='AbortError'?'The request timed out.':(e.message||'Please try again.'));save();render();status('Ready')}
   finally{busy=false;input.disabled=false;input.focus()}
