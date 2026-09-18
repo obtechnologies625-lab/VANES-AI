@@ -65,7 +65,39 @@ function inject(){
   </div>`;
   main.appendChild(section);style();wire();
 }
-function style(){if(document.getElementById('vanes-settings-style'))return;const s=document.createElement('style');s.id='vanes-settings-style';s.textContent=`#settings .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.settings-card{display:grid;gap:11px}.settings-card label{display:grid;gap:6px;font-size:13px;font-weight:700}.settings-card input,.settings-card select,.settings-card textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d8dbe3;border-radius:11px;background:#fff;color:#111;font:inherit}.settings-card textarea{min-height:120px;resize:vertical}.amounts{display:flex;flex-wrap:wrap;gap:8px}.amounts button{border:1px solid #d8dbe3;background:#fff;color:#111;border-radius:10px;padding:9px 12px;cursor:pointer}.settings-status{min-height:22px;font-size:13px;font-weight:700}.settings-help{font-size:12px;opacity:.75;line-height:1.5;margin:0}.settings-card h2{margin:0}.settings-card>.secondary-button,.settings-card>.primary-button{width:100%}@media(max-width:800px){#settings .settings-grid{grid-template-columns:1fr}}`;document.head.appendChild(s)}
+function style(){if(document.getElementById('vanes-settings-style'))return;const s=document.createElement('style');s.id='vanes-settings-style';s.textContent=`
+#settings{--ios-blue:#0a84ff;--ios-purple:#5856d6;padding-bottom:60px}
+#settings .topbar{margin-bottom:22px}
+#settings .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px;align-items:start}
+#settings .settings-card{position:relative;display:grid;gap:13px;padding:24px;border:1px solid rgba(255,255,255,.12);border-radius:24px;background:linear-gradient(145deg,rgba(24,30,43,.86),rgba(10,15,25,.72));box-shadow:0 18px 45px rgba(0,0,0,.22),inset 0 1px 0 rgba(255,255,255,.08);backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);overflow:hidden}
+#settings .settings-card:before{content:"";position:absolute;inset:0;background:linear-gradient(120deg,rgba(10,132,255,.08),transparent 45%,rgba(88,86,214,.07));pointer-events:none}
+#settings .settings-card>*{position:relative;z-index:1}
+#settings .settings-card h2{margin:0;font-size:21px;letter-spacing:-.02em}
+#settings .settings-card p{line-height:1.55}
+#settings .settings-card label{display:grid;gap:7px;font-size:13px;font-weight:700;color:#dbe7f7}
+#settings .settings-card input,#settings .settings-card select,#settings .settings-card textarea{width:100%;box-sizing:border-box;padding:13px 15px;border:1px solid rgba(255,255,255,.13);border-radius:15px;background:rgba(255,255,255,.07);color:#fff;font:inherit;outline:none;transition:.2s;border-color:rgba(255,255,255,.13)}
+#settings .settings-card input::placeholder,#settings .settings-card textarea::placeholder{color:#9aa9bd}
+#settings .settings-card input:focus,#settings .settings-card select:focus,#settings .settings-card textarea:focus{border-color:var(--ios-blue);box-shadow:0 0 0 4px rgba(10,132,255,.14)}
+#settings .settings-card select{appearance:none;-webkit-appearance:none;background-image:linear-gradient(45deg,transparent 50%,#9fb4ca 50%),linear-gradient(135deg,#9fb4ca 50%,transparent 50%);background-position:calc(100% - 19px) 54%,calc(100% - 14px) 54%;background-size:5px 5px,5px 5px;background-repeat:no-repeat;padding-right:40px}
+#settings .settings-card textarea{min-height:120px;resize:vertical}
+#settings .settings-card button{min-height:46px;border-radius:15px;border:1px solid rgba(255,255,255,.12);font-weight:800;cursor:pointer;transition:transform .16s,filter .16s,box-shadow .16s}
+#settings .settings-card button:active{transform:scale(.98)}
+#settings .settings-card .primary-button{background:linear-gradient(135deg,var(--ios-blue),var(--ios-purple));color:#fff;border:0;box-shadow:0 10px 24px rgba(10,132,255,.2)}
+#settings .settings-card .secondary-button{background:rgba(255,255,255,.07);color:#fff}
+#settings .settings-help{font-size:12px;opacity:.72;margin:0}
+#settings .settings-status{min-height:20px;font-size:13px;font-weight:700;color:#8fc5ff}
+#settings .profile-context-badge{display:inline-flex;align-items:center;width:max-content;max-width:100%;padding:8px 11px;border-radius:999px;background:rgba(10,132,255,.11);border:1px solid rgba(10,132,255,.24);color:#a9d5ff;font-size:12px}
+#settings .amounts{display:flex;flex-wrap:wrap;gap:8px}
+#settings .amounts button{background:rgba(255,255,255,.07);color:#fff;padding:9px 12px;min-height:40px;border-radius:12px}
+#settings .amounts button:hover{filter:brightness(1.12)}
+#settings .rating-row{display:flex;gap:10px}
+#settings .rating-option{display:block!important}
+#settings .rating-option input{position:absolute;opacity:0;pointer-events:none}
+#settings .rating-option span{display:grid;place-items:center;width:46px;height:46px;border-radius:15px;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.13);cursor:pointer;transition:.18s}
+#settings .rating-option input:checked+span{background:linear-gradient(135deg,var(--ios-blue),var(--ios-purple));border-color:transparent;box-shadow:0 8px 22px rgba(10,132,255,.25);transform:translateY(-2px)}
+#settings form{display:grid;gap:13px}
+@media(max-width:800px){#settings .settings-grid{grid-template-columns:1fr}#settings .settings-card{border-radius:21px;padding:20px}}
+`;document.head.appendChild(s)}
 async function directFormSubmit(type,payload){
   const subjects={
     donation:'VANES donation request',
