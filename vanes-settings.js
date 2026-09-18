@@ -60,7 +60,52 @@ function inject(){
   main.appendChild(section);style();wire();
 }
 function style(){if(document.getElementById('vanes-settings-style'))return;const s=document.createElement('style');s.id='vanes-settings-style';s.textContent=`#settings .settings-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px}.settings-card{display:grid;gap:11px}.settings-card label{display:grid;gap:6px;font-size:13px;font-weight:700}.settings-card input,.settings-card select,.settings-card textarea{width:100%;box-sizing:border-box;padding:11px 12px;border:1px solid #d8dbe3;border-radius:11px;background:#fff;color:#111;font:inherit}.settings-card textarea{min-height:120px;resize:vertical}.amounts{display:flex;flex-wrap:wrap;gap:8px}.amounts button{border:1px solid #d8dbe3;background:#fff;color:#111;border-radius:10px;padding:9px 12px;cursor:pointer}.settings-status{min-height:22px;font-size:13px;font-weight:700}.settings-help{font-size:12px;opacity:.75;line-height:1.5;margin:0}.settings-card h2{margin:0}.settings-card>.secondary-button,.settings-card>.primary-button{width:100%}@media(max-width:800px){#settings .settings-grid{grid-template-columns:1fr}}`;document.head.appendChild(s)}
-async function send(type,payload,status){status.textContent='Sending securely…';try{const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,payload})});const d=await r.json().catch(()=>({}));if(!r.ok){const detail=d.detail?` — ${d.detail}`:'';throw new Error((d.error||'Request could not be sent.')+detail)}window.VANES_TRACK?.('settings_'+type+'_submitted',{method:payload?.method||null});status.textContent=d.message||'Sent successfully. Thank you.';return d}catch(e){status.textContent=e.message||'Unable to send right now.'}}
+async function directFormSubmit(type,payload){
+  const subject={donation:'VANES donation request',family:'VANES family membership request',field:'OB Tech-Labs field interest',feedback:'VANES app feedback'}[type]||'VANES request';
+  const message=type==='donation'?\`VANES DONATION REQUEST
+Amount: \${payload.amount} \${payload.currency||'TZS'}
+Method: \${payload.method||''}
+Name: \${payload.name||''}
+Phone: \${payload.phone||''}
+Email: \${payload.email||''}\`:
+    type==='family'?\`VANES FAMILY MEMBERSHIP REQUEST
+Name: \${payload.name||''}
+Phone: \${payload.phone||''}
+Email: \${payload.email||''}\`:
+    type==='field'?\`OB TECH-LABS FIELD INTEREST
+Name: \${payload.name||''}
+Phone: \${payload.phone||''}
+Email: \${payload.email||''}\`:
+    \`VANES FEEDBACK
+Comment: \${payload.comment||''}
+Email: \${payload.email||''}\`;
+  const form=new URLSearchParams({name:payload.name||'',email:payload.email||'',phone:payload.phone||'',subject,message,_captcha:'false',_template:'table'});
+  const r=await fetch('https://formsubmit.co/ajax/obtechnologies625@gmail.com',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:form});
+  const raw=await r.text();let d={};try{d=raw?JSON.parse(raw):{}}catch{}
+  if(!r.ok||d.success===false)throw new Error(\`Direct FormSubmit HTTP \${r.status}: \${d.message||d.error||raw||'Request failed.'}\`);
+  return d;
+}
+async function send(type,payload,status){
+  status.textContent='Sending securely…';
+  try{
+    const r=await fetch('/api/contact',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({type,payload})});
+    const d=await r.json().catch(()=>({}));
+    if(!r.ok){
+      if(r.status===429||d?.detail?.includes('FormSubmit HTTP 429')){
+        status.textContent='Using direct delivery fallback…';
+        const direct=await directFormSubmit(type,payload);
+        window.VANES_TRACK?.('settings_'+type+'_submitted',{method:'formsubmit-direct'});
+        status.textContent=direct?.message||'Sent successfully. Thank you.';
+        return direct;
+      }
+      const detail=d.detail?\` — \${d.detail}\`:'';
+      throw new Error((d.error||'Request could not be sent.')+detail)
+    }
+    window.VANES_TRACK?.('settings_'+type+'_submitted',{method:payload?.method||null});
+    status.textContent=d.message||'Sent successfully. Thank you.';
+    return d
+  }catch(e){status.textContent=e.message||'Unable to send right now.'}
+}
 function wire(){
  const x=read(), theme=document.querySelector('#setTheme');
  document.querySelector('#settingsProfileSummary').textContent=profileSummary();
