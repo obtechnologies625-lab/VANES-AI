@@ -10,7 +10,7 @@ const originalFetch=window.fetch.bind(window);
 window.fetch=function(input,init){
   try{
     const raw=typeof input==='string'?input:input?.url||'';
-    if(/^\/api\/(chat|image|contact|video|analytics)(?:\?|$)/.test(raw)){
+    if(/^\/api\/(chat|image|contact|analytics)(?:\?|$)/.test(raw)){
       const target=API+raw;
       if(typeof input==='string') return originalFetch(target,init);
       return originalFetch(new Request(target,input));
@@ -22,7 +22,6 @@ window.VANES_CHAT_ENDPOINT=API+'/api/chat';
 window.VANES_IMAGE_ENDPOINT=API+'/api/image';
 window.VANES_CONTACT_ENDPOINT=API+'/api/contact';
 window.VANES_ANALYTICS_ENDPOINT=API+'/api/analytics';
-window.VANES_RUNWAY_ENDPOINT=API+'/api/video';
 
 function planSubmit(e){
   const form=e.target.closest?.('#planForm');
