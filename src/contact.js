@@ -35,6 +35,24 @@ async function email(text,subject,p){
     return {ok:false,detail:`FormSubmit network error: ${clean(error?.message||error,500)}`};
   }
 }
+async function resend(env,text,subject,p){
+  if(!env.RESEND_API_KEY)return {ok:false,configured:false};
+  const from=clean(env.CONTACT_FROM_EMAIL||"VANES AI <onboarding@resend.dev>",180);
+  try{
+    const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from,to:[OWNER_EMAIL],subject,text,reply_to:validEmail(p.email)?clean(p.email,150):undefined})});
+    const raw=await r.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
+    return r.ok?{ok:true,configured:true}:{ok:false,configured:true,detail:"Resend HTTP "+r.status+": "+clean(data?.message||data?.error||raw,400)}
+  }catch(error){return {ok:false,configured:true,detail:"Resend network error: "+clean(error?.message||error,300)}}
+}
+async function web3forms(env,text,subject,p){
+  if(!env.WEB3FORMS_ACCESS_KEY)return {ok:false,configured:false};
+  try{
+    const form=new URLSearchParams({access_key:env.WEB3FORMS_ACCESS_KEY,subject,message:text,from_name:"VANES AI",email:clean(p.email,150)});
+    const r=await fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
+    const raw=await r.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
+    return r.ok&&data?.success!==false?{ok:true,configured:true}:{ok:false,configured:true,detail:"Web3Forms HTTP "+r.status+": "+clean(data?.message||data?.error||raw,400)}
+  }catch(error){return {ok:false,configured:true,detail:"Web3Forms network error: "+clean(error?.message||error,300)}}
+}
 async function sms(env,text){
   if(!env.TWILIO_ACCOUNT_SID||!env.TWILIO_AUTH_TOKEN||!env.TWILIO_FROM_NUMBER||!env.OWNER_PHONE_NUMBER)return {ok:false,configured:false};
   try{
@@ -59,12 +77,12 @@ export async function handleContact(request,env){
   const ownerTransactionText=type==="donation"&&env.OWNER_AIRTEL_NUMBER?text+`\n\nPRIVATE OWNER PAYMENT ROUTING: ${OWNER_AIRTEL_NETWORK} ${env.OWNER_AIRTEL_NUMBER}`:text;
   let dbResult={ok:false};
   if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){}}
-  const [emailResult,smsResult]=await Promise.all([email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
-  if(!emailResult.ok&&!smsResult.ok&&!dbResult.ok){
-    const details=[emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
+  const [resendResult,web3Result,emailResult,smsResult]=await Promise.all([resend(env,ownerTransactionText,subject,p),web3forms(env,ownerTransactionText,subject,p),email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);\n  const delivered=resendResult.ok||web3Result.ok||emailResult.ok||smsResult.ok;
+  if(!delivered&&!dbResult.ok){
+    const details=[resendResult.detail,web3Result.detail,emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
     return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503);
   }
-  if(type==="donation")return json({ok:true,message:emailResult.ok?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
-  if(type==="rating")return json({ok:true,message:emailResult.ok?"Rating received. Thank you for helping improve VANES.":"Rating saved for processing. Thank you."});
-  return json({ok:true,message:emailResult.ok?"Sent to OB Technologies. Thank you.":"Request sent through the configured notification channel."});
+  if(type==="donation")return json({ok:true,message:delivered?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
+  if(type==="rating")return json({ok:true,message:delivered?"Rating received. Thank you for helping improve VANES.":"Rating saved for processing. Thank you."});
+  return json({ok:true,message:delivered?"Sent to OB Technologies. Thank you.":"Request saved for processing."});
 }
