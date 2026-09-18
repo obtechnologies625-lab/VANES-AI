@@ -40,7 +40,9 @@ async function toggleNotifications(){
 }
 function profileSummary(){const p=profile();if(!p)return 'No learner profile saved yet.';return `${p.name} · ${p.level}${p.combination?' · '+p.combination:''}`}
 function inject(){
-  if(document.getElementById('vanesSettings'))return;
+  /* Settings is a single persistent view. The previous guard looked for a
+     non-existent id, which allowed duplicate/empty settings views to build up. */
+  if(document.getElementById('settings'))return;
   const nav=document.querySelector('.nav-links');
   if(nav&&!nav.querySelector('[data-view="settings"]')){const a=document.createElement('a');a.className='nav-link';a.href='#settings';a.dataset.view='settings';a.innerHTML='<span>⚙</span>Settings';nav.appendChild(a);}
   const main=document.querySelector('main');if(!main)return;
@@ -125,6 +127,11 @@ function wire(){
  document.getElementById('feedbackButton').onclick=()=>{const text=document.getElementById('feedbackText').value.trim();if(!text)return document.getElementById('feedbackStatus').textContent='Please enter your comment or suggestion.';return send('feedback',{comment:text,email:document.getElementById('feedbackEmail').value.trim()},document.getElementById('feedbackStatus'))};
 }
 function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
-function boot(){inject();document.addEventListener('click',e=>{const a=e.target.closest?.('[data-view="settings"]');if(a){e.preventDefault();go('settings')}},true);window.addEventListener('hashchange',route);route();const q=read();applyTheme(q.theme||localStorage.getItem('vanes-theme')||'light')}
+function boot(){
+  inject();
+  /* If another script changed the DOM during startup, make sure the Settings
+     view is present before routing to it. */
+  if(!document.getElementById('settings')) setTimeout(inject,0);
+  document.addEventListener('click',e=>{const a=e.target.closest?.('[data-view="settings"]');if(a){e.preventDefault();go('settings')}},true);window.addEventListener('hashchange',route);route();const q=read();applyTheme(q.theme||localStorage.getItem('vanes-theme')||'light')}
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
