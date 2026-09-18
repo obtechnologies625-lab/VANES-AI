@@ -26,21 +26,28 @@ async function email(text,subject,p){
     form.set("_captcha","false");
     form.set("_template","table");
     const r=await fetch(FORM_SUBMIT_URL,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
-    const raw=await r.text(); let data=null; try{data=raw?JSON.parse(raw):null}catch(_){}
-    return r.ok && data?.success !== false;
-  }catch{return false}
+    const raw=await r.text();
+    let data=null; try{data=raw?JSON.parse(raw):null}catch(_){}
+    if(r.ok && data?.success !== false)return {ok:true};
+    const detail=clean(data?.message||data?.error||raw||("HTTP "+r.status),500);
+    return {ok:false,detail:`FormSubmit HTTP ${r.status}: ${detail}`};
+  }catch(error){
+    return {ok:false,detail:`FormSubmit network error: ${clean(error?.message||error,500)}`};
+  }
 }
 async function sms(env,text){
-  if(!env.TWILIO_ACCOUNT_SID||!env.TWILIO_AUTH_TOKEN||!env.TWILIO_FROM_NUMBER||!env.OWNER_PHONE_NUMBER)return false;
-  const body=new URLSearchParams({To:env.OWNER_PHONE_NUMBER,From:env.TWILIO_FROM_NUMBER,Body:text.slice(0,1500)});
-  const auth=btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
-  const r=await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`,{method:"POST",headers:{Authorization:"Basic "+auth,"Content-Type":"application/x-www-form-urlencoded"},body});
-  return r.ok;
+  if(!env.TWILIO_ACCOUNT_SID||!env.TWILIO_AUTH_TOKEN||!env.TWILIO_FROM_NUMBER||!env.OWNER_PHONE_NUMBER)return {ok:false,configured:false};
+  try{
+    const body=new URLSearchParams({To:env.OWNER_PHONE_NUMBER,From:env.TWILIO_FROM_NUMBER,Body:text.slice(0,1500)});
+    const auth=btoa(`${env.TWILIO_ACCOUNT_SID}:${env.TWILIO_AUTH_TOKEN}`);
+    const r=await fetch(`https://api.twilio.com/2010-04-01/Accounts/${env.TWILIO_ACCOUNT_SID}/Messages.json`,{method:"POST",headers:{Authorization:"Basic "+auth,"Content-Type":"application/x-www-form-urlencoded"},body});
+    return r.ok?{ok:true,configured:true}:{ok:false,configured:true,detail:`SMS HTTP ${r.status}`};
+  }catch(error){return {ok:false,configured:true,detail:`SMS network error: ${clean(error?.message||error,300)}`}}
 }
 export async function handleContact(request,env){
   if(request.method==="OPTIONS")return new Response(null,{status:204,headers:{"Access-Control-Allow-Origin":"*","Access-Control-Allow-Headers":"Content-Type","Access-Control-Allow-Methods":"POST,OPTIONS"}});
   if(request.method!=="POST")return json({error:"Method not allowed"},405);
-  let b; try{b=await request.json()}catch{return json({error:"Invalid request."},400)}
+  let b;try{b=await request.json()}catch{return json({error:"Invalid request."},400)}
   const type=clean(b?.type,30),p=b?.payload||{};
   if(!allowed.has(type))return json({error:"Unsupported request."},400);
   if(!clean(p.name,100)&&type!=="feedback")return json({error:"Name is required."},400);
@@ -50,8 +57,11 @@ export async function handleContact(request,env){
   const text=textFor(type,p);
   const subject={donation:"VANES donation request",family:"VANES family membership request",field:"OB Tech-Labs field interest",feedback:"VANES app feedback"}[type];
   const ownerTransactionText=type==="donation"&&env.OWNER_AIRTEL_NUMBER?text+`\n\nPRIVATE OWNER PAYMENT ROUTING: ${OWNER_AIRTEL_NETWORK} ${env.OWNER_AIRTEL_NUMBER}`:text;
-  const [sentEmail,sentSms]=await Promise.all([email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
-  if(!sentEmail&&!sentSms)return json({error:"VANES could not deliver the request. Please try again later."},503);
-  if(type==="donation")return json({ok:true,message:sentEmail?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
-  return json({ok:true,message:sentEmail?"Sent to OB Technologies. Thank you.":"Request sent through the configured notification channel."});
+  const [emailResult,smsResult]=await Promise.all([email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
+  if(!emailResult.ok&&!smsResult.ok){
+    const details=[emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
+    return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503);
+  }
+  if(type==="donation")return json({ok:true,message:emailResult.ok?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
+  return json({ok:true,message:emailResult.ok?"Sent to OB Technologies. Thank you.":"Request sent through the configured notification channel."});
 }
