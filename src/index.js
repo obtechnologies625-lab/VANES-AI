@@ -24,13 +24,13 @@ async function handleChat(request,env){
   const headers=cors(request.headers.get("Origin"));
   if(request.method==="OPTIONS")return new Response(null,{status:204,headers});
   if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);
-  if(!env.GEMINI_API_KEY)return json({error:"VANES AI server is missing GEMINI_API_KEY."},500,headers);
+  if(!env.GEMINI_API_KEY)return json({error:"VANES AI is not configured yet. Add GEMINI_API_KEY to the Cloudflare Worker secrets."},500,headers);
   let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}
   if(!Array.isArray(body?.messages)||!body.messages.length)return json({error:"Please send a question."},400,headers);
 
   const messages=body.messages.slice(-18);
   const systemMessage=messages.find(m=>m?.role==="system");
-  const systemPrompt=typeof systemMessage?.content==="string"?systemMessage.content:"You are VANES AI, a careful educational AI assistant. Give complete, useful answers and explain your reasoning clearly.";
+  const systemPrompt=typeof systemMessage?.content==="string"?systemMessage.content:"You are VANES AI, a careful educational AI assistant. Give complete, useful answers and explain clearly.";
   const contents=messages.filter(m=>m?.role!=="system").map(m=>{
     const role=m?.role==="assistant"?"model":"user";
     const parts=Array.isArray(m?.content)?m.content.map(p=>{
@@ -45,39 +45,47 @@ async function handleChat(request,env){
     }).filter(Boolean):[{text:String(m?.content||"")}];
     return {role,parts:parts.length?parts:[{text:""}]};
   }).filter(x=>x.parts.some(p=>p.text||p.inline_data));
-
   if(!contents.length)return json({error:"Please send a question."},400,headers);
-  const model=typeof env.GEMINI_MODEL==="string"&&env.GEMINI_MODEL.trim()?env.GEMINI_MODEL.trim():"gemini-1.5-flash";
-  const requestedTokens=Number(body.max_tokens);
-  const maxTokens=Number.isFinite(requestedTokens)?Math.min(Math.max(requestedTokens,256),1400):1200;
-  const endpoint=`https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent?key=${encodeURIComponent(env.GEMINI_API_KEY)}`;
 
-  try{
-    const upstream=await fetch(endpoint,{
-      method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({
-        systemInstruction:{parts:[{text:systemPrompt}]},
-        contents,
-        generationConfig:{temperature:.3,maxOutputTokens:maxTokens}
-      })
-    });
-    const raw=await upstream.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
-    if(!upstream.ok){
-      const detail=readableError(data?.error||data,raw||("Gemini returned HTTP "+upstream.status));
-      return json({error:"VANES could not produce an answer.",detail,code:upstream.status,provider:"Gemini",model},upstream.status,headers);
+  const requestedModel=typeof body.model==="string"?body.model.trim():"";
+  const configuredModel=typeof env.GEMINI_MODEL==="string"&&env.GEMINI_MODEL.trim()?env.GEMINI_MODEL.trim():"";
+  const models=[requestedModel,configuredModel,"gemini-2.5-flash","gemini-2.0-flash"].filter((m,i,a)=>m&&a.indexOf(m)===i);
+  const n=Number(body.max_tokens);
+  const maxTokens=Number.isFinite(n)?Math.min(Math.max(n,256),1400):1200;
+  let lastStatus=502,lastDetail="No Gemini model returned an answer.";
+
+  for(const model of models){
+    const endpoint="https://generativelanguage.googleapis.com/v1beta/models/"+encodeURIComponent(model)+":generateContent?key="+encodeURIComponent(env.GEMINI_API_KEY);
+    try{
+      const upstream=await fetch(endpoint,{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+          systemInstruction:{parts:[{text:systemPrompt}]},
+          contents,
+          generationConfig:{temperature:.3,maxOutputTokens:maxTokens}
+        })
+      });
+      const raw=await upstream.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
+      if(!upstream.ok){
+        lastStatus=upstream.status;
+        lastDetail=readableError(data?.error||data,raw||("Gemini returned HTTP "+upstream.status));
+        continue;
+      }
+      const content=(data?.candidates?.[0]?.content?.parts||[]).map(p=>typeof p?.text==="string"?p.text:"").filter(Boolean).join("\n").trim();
+      if(!content){
+        lastStatus=502;
+        lastDetail=data?.promptFeedback?.blockReason||data?.candidates?.[0]?.finishReason||"Gemini returned no answer text.";
+        continue;
+      }
+      const finish=data?.candidates?.[0]?.finishReason;
+      return json({choices:[{message:{role:"assistant",content},finish_reason:finish==="MAX_TOKENS"?"length":"stop"}],model,provider:"Gemini"},200,{...headers,"X-VANES-Model":model});
+    }catch(error){
+      lastStatus=502;lastDetail=error?.message||"Network error contacting Gemini.";continue;
     }
-    const content=(data?.candidates?.[0]?.content?.parts||[]).map(p=>typeof p?.text==="string"?p.text:"").filter(Boolean).join("\n").trim();
-    if(!content){
-      const reason=data?.promptFeedback?.blockReason||data?.candidates?.[0]?.finishReason;
-      return json({error:"VANES could not produce an answer.",detail:reason?"Gemini returned no answer text ("+reason+").":"Gemini returned no answer text.",code:502,provider:"Gemini",model},502,headers);
-    }
-    const finish=data?.candidates?.[0]?.finishReason;
-    return json({choices:[{message:{role:"assistant",content},finish_reason:finish==="MAX_TOKENS"?"length":"stop"}],model,provider:"Gemini"},200,{...headers,"X-VANES-Model":model});
-  }catch(error){
-    return json({error:"VANES could not produce an answer.",detail:error?.message||"Network error contacting Gemini.",code:502,provider:"Gemini",model},502,headers);
   }
+  return json({error:"VANES could not produce an answer.",detail:lastDetail,code:lastStatus,provider:"Gemini",modelsTried:models},lastStatus>=400&&lastStatus<600?lastStatus:502,headers);
 }
 async function handleImage(request,env){const headers=cors(request.headers.get("Origin"));if(request.method==="OPTIONS")return new Response(null,{status:204,headers});if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);if(!env.OPENROUTER_API_KEY)return json({error:"The VANES image service is not configured. Add OPENROUTER_API_KEY in Cloudflare."},500,headers);let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}const prompt=typeof body?.prompt==="string"?body.prompt.trim():"";if(!prompt)return json({error:"Please describe the image you want."},400,headers);const model=typeof env.VANES_IMAGE_MODEL==="string"&&env.VANES_IMAGE_MODEL.trim()?env.VANES_IMAGE_MODEL.trim():"google/gemini-2.5-flash-image";const enhancedPrompt=enhanceImagePrompt(prompt);try{const upstream=await fetch(OPENROUTER_URL,{method:"POST",headers:{Authorization:`Bearer ${env.OPENROUTER_API_KEY}`,"Content-Type":"application/json","HTTP-Referer":env.APP_URL||new URL(request.url).origin,"X-Title":"VANES AI Image Generator"},body:JSON.stringify({model,messages:[{role:"user",content:enhancedPrompt}],modalities:["text","image"],max_tokens:IMAGE_MAX_TOKENS})});const raw=await upstream.text();let data=null;try{data=JSON.parse(raw)}catch{}if(!upstream.ok){return json({error:readableError(data?.error||data,raw||`Image generation failed (${upstream.status}).`),provider:"OpenRouter",model},upstream.status,headers)}const images=extractImageUrls(data);const text=extractText(data);if(!images.length)return json({error:"The image model completed but returned no renderable image.",provider:"OpenRouter",model,details:text||null},502,headers);return json({ok:true,provider:"OpenRouter",model,images,text},200,headers)}catch(error){return json({error:readableError(error,"Unable to reach the image generation service."),provider:"OpenRouter",model},502,headers)}}
 async function handleRunway(request,env){const headers=cors(request.headers.get("Origin"));if(request.method==="OPTIONS")return new Response(null,{status:204,headers});if(!env.RUNWAY_API_KEY)return json({error:"Runway is not connected to VANES yet. Configure the private Cloudflare secret RUNWAY_API_KEY."},503,headers);const url=new URL(request.url);const taskId=url.searchParams.get("task");const baseHeaders={Authorization:`Bearer ${env.RUNWAY_API_KEY}`,"Content-Type":"application/json","X-Runway-Version":env.RUNWAY_API_VERSION||"2024-11-06"};try{if(request.method==="GET"&&taskId){const r=await fetch(`${RUNWAY_URL}/tasks/${encodeURIComponent(taskId)}`,{headers:baseHeaders});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw}}return json(data,r.status,headers)}if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);const length=Number(request.headers.get("Content-Length")||0);if(length>MAX_BODY)return json({error:"Video request is too large."},413,headers);let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}const prompt=typeof body?.prompt==="string"?body.prompt.trim():"";if(!prompt)return json({error:"Please describe the learning visual or study animation you want."},400,headers);const educationalPrefix="VANES AI educational visual generation. Create a learning-focused visual for a Tanzanian secondary-school learner. Preserve the user’s study intent, factual meaning and age-appropriate presentation. Do not introduce unrelated entertainment, promotional content or unsupported academic claims. User request: ";const model=typeof body.model==="string"&&body.model.trim()?body.model.trim():(env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL);const duration=[5,10].includes(Number(body.duration))?Number(body.duration):5;const ratio=["1280:720","720:1280","1104:832","832:1104","960:960"].includes(body.ratio)?body.ratio:"1280:720";const payload={model,promptText:educationalPrefix+prompt,duration,ratio};if(typeof body.image==="string"&&body.image.trim())payload.promptImage=body.image.trim();const r=await fetch(`${RUNWAY_URL}/image_to_video`,{method:"POST",headers:baseHeaders,body:JSON.stringify(payload)});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw}}if(!r.ok)return json({error:readableError(data?.error||data,raw||"Runway request failed.")},r.status,headers);return json({ok:true,taskId:data.id||data.task_id||data.taskId,provider:"Runway",status:data.status||"PENDING"},200,headers)}catch(error){return json({error:readableError(error,"Unable to reach Runway.")},502,headers)}}
-export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==="/api/health")return json({ok:true,worker:"vanes-ai",geminiConfigured:Boolean(env.GEMINI_API_KEY),runwayConfigured:Boolean(env.RUNWAY_API_KEY),maxTokens:DEFAULT_MAX_TOKENS,imageMaxTokens:IMAGE_MAX_TOKENS,imageModel:env.VANES_IMAGE_MODEL||"google/gemini-2.5-flash-image",imageFallback:"disabled",visionModels:["gemini-1.5-flash"],runwayModel:env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL});if(url.pathname==="/api/contact")return handleContact(request,env);if(url.pathname==="/api/analytics")return handleAnalytics(request,env);if(url.pathname==="/api/admin/analytics")return handleAdminAnalytics(request,env);if(url.pathname==="/api/chat")return handleChat(request,env);if(url.pathname==="/api/image")return handleImage(request,env);if(url.pathname==="/api/video")return handleRunway(request,env);return env.ASSETS.fetch(request)}};
+export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==="/api/health")return json({ok:true,worker:"vanes-ai",geminiConfigured:Boolean(env.GEMINI_API_KEY),geminiModel:env.GEMINI_MODEL||"gemini-2.5-flash",runwayConfigured:Boolean(env.RUNWAY_API_KEY),maxTokens:DEFAULT_MAX_TOKENS,imageMaxTokens:IMAGE_MAX_TOKENS,imageModel:env.VANES_IMAGE_MODEL||"google/gemini-2.5-flash-image",imageFallback:"disabled",visionModels:["gemini-1.5-flash"],runwayModel:env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL});if(url.pathname==="/api/contact")return handleContact(request,env);if(url.pathname==="/api/analytics")return handleAnalytics(request,env);if(url.pathname==="/api/admin/analytics")return handleAdminAnalytics(request,env);if(url.pathname==="/api/chat")return handleChat(request,env);if(url.pathname==="/api/image")return handleImage(request,env);if(url.pathname==="/api/video")return handleRunway(request,env);return env.ASSETS.fetch(request)}};
