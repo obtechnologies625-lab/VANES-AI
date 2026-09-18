@@ -24,51 +24,28 @@ async function handleChat(request,env){
   const headers=cors(request.headers.get("Origin"));
   if(request.method==="OPTIONS")return new Response(null,{status:204,headers});
   if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);
-  if(!env.OPENROUTER_API_KEY)return json({error:"VANES AI is not configured yet. Add OPENROUTER_API_KEY to the Cloudflare Worker secrets."},500,headers);
+  if(!env.MISTRAL_API_KEY)return json({error:"VANES AI is not configured yet. Add MISTRAL_API_KEY to the Cloudflare Worker secrets."},500,headers);
   let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}
   if(!Array.isArray(body?.messages)||!body.messages.length)return json({error:"Please send a question."},400,headers);
-
   const messages=body.messages.slice(-18);
   const systemMessage=messages.find(m=>m?.role==="system");
   const systemPrompt=typeof systemMessage?.content==="string"?systemMessage.content:"You are VANES AI, a careful educational AI assistant. Give complete, useful answers and explain clearly.";
-  const hasImage=messages.some(m=>Array.isArray(m?.content)&&m.content.some(p=>p?.image_url||p?.type==="image"));
-  const textModel=typeof env.VANES_CHAT_MODEL==="string"&&env.VANES_CHAT_MODEL.trim()?env.VANES_CHAT_MODEL.trim():"mistralai/codestral-2508";
-  const imageModel=typeof env.VANES_VISION_MODEL==="string"&&env.VANES_VISION_MODEL.trim()?env.VANES_VISION_MODEL.trim():"mistralai/pixtral-12b";
-  const fallbackModels=hasImage?[imageModel,"mistralai/pixtral-12b","openrouter/free"]:[textModel,"mistralai/codestral-2508","mistralai/mistral-small-3.1-24b-instruct:free","openrouter/free"];
-  const models=fallbackModels.filter((m,i,a)=>m&&a.indexOf(m)===i);
+  const model=typeof env.MISTRAL_MODEL==="string"&&env.MISTRAL_MODEL.trim()?env.MISTRAL_MODEL.trim():"codestral-latest";
   const n=Number(body.max_tokens);const maxTokens=Number.isFinite(n)?Math.min(Math.max(n,256),1400):1200;
-
-  const orMessages=[{role:"system",content:systemPrompt},...messages.filter(m=>m?.role!=="system")];
-  let lastStatus=502,lastDetail="No OpenRouter model returned an answer.";
-
-  for(const model of models){
-    try{
-      const upstream=await fetch(OPENROUTER_URL,{
-        method:"POST",
-        headers:{
-          Authorization:`Bearer ${env.OPENROUTER_API_KEY}`,
-          "Content-Type":"application/json",
-          "HTTP-Referer":env.APP_URL||new URL(request.url).origin,
-          "X-Title":"VANES AI"
-        },
-        body:JSON.stringify({model,messages:orMessages,max_tokens:maxTokens,temperature:.3})
-      });
-      const raw=await upstream.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
-      if(!upstream.ok){
-        lastStatus=upstream.status;
-        lastDetail=readableError(data?.error||data,raw||("OpenRouter returned HTTP "+upstream.status));
-        continue;
-      }
-      const content=extractText(data).trim();
-      if(!content){
-        lastStatus=502;lastDetail="OpenRouter returned no answer text.";continue;
-      }
-      const finish=data?.choices?.[0]?.finish_reason;
-      return json({choices:[{message:{role:"assistant",content},finish_reason:finish==="length"?"length":"stop"}],model,provider:"OpenRouter"},200,{...headers,"X-VANES-Model":model});
-    }catch(error){lastStatus=502;lastDetail=error?.message||"Network error contacting OpenRouter.";continue}
-  }
-  return json({error:"VANES could not produce an answer.",detail:lastDetail,code:lastStatus,provider:"OpenRouter",modelsTried:models},lastStatus>=400&&lastStatus<600?lastStatus:502,headers);
+  const mistralMessages=[{role:"system",content:systemPrompt},...messages.filter(m=>m?.role!=="system")];
+  try{
+    const upstream=await fetch("https://api.mistral.ai/v1/chat/completions",{
+      method:"POST",
+      headers:{Authorization:"Bearer "+env.MISTRAL_API_KEY,"Content-Type":"application/json"},
+      body:JSON.stringify({model,messages:mistralMessages,temperature:.3,max_tokens:maxTokens,stream:false})
+    });
+    const raw=await upstream.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
+    if(!upstream.ok)return json({error:"VANES could not produce an answer.",detail:readableError(data?.error||data,raw||("Mistral returned HTTP "+upstream.status)),code:upstream.status,provider:"Mistral",model},upstream.status,headers);
+    const content=extractText(data).trim();
+    if(!content)return json({error:"VANES could not produce an answer.",detail:"Mistral returned no answer text.",code:502,provider:"Mistral",model},502,headers);
+    return json({choices:[{message:{role:"assistant",content},finish_reason:data?.choices?.[0]?.finish_reason==="length"?"length":"stop"}],model,provider:"Mistral"},200,{...headers,"X-VANES-Model":model});
+  }catch(error){return json({error:"VANES could not produce an answer.",detail:error?.message||"Network error contacting Mistral.",code:502,provider:"Mistral",model},502,headers)}
 }
 async function handleImage(request,env){const headers=cors(request.headers.get("Origin"));if(request.method==="OPTIONS")return new Response(null,{status:204,headers});if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);if(!env.OPENROUTER_API_KEY)return json({error:"The VANES image service is not configured. Add OPENROUTER_API_KEY in Cloudflare."},500,headers);let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}const prompt=typeof body?.prompt==="string"?body.prompt.trim():"";if(!prompt)return json({error:"Please describe the image you want."},400,headers);const model=typeof env.VANES_IMAGE_MODEL==="string"&&env.VANES_IMAGE_MODEL.trim()?env.VANES_IMAGE_MODEL.trim():"google/gemini-2.5-flash-image";const enhancedPrompt=enhanceImagePrompt(prompt);try{const upstream=await fetch(OPENROUTER_URL,{method:"POST",headers:{Authorization:`Bearer ${env.OPENROUTER_API_KEY}`,"Content-Type":"application/json","HTTP-Referer":env.APP_URL||new URL(request.url).origin,"X-Title":"VANES AI Image Generator"},body:JSON.stringify({model,messages:[{role:"user",content:enhancedPrompt}],modalities:["text","image"],max_tokens:IMAGE_MAX_TOKENS})});const raw=await upstream.text();let data=null;try{data=JSON.parse(raw)}catch{}if(!upstream.ok){return json({error:readableError(data?.error||data,raw||`Image generation failed (${upstream.status}).`),provider:"OpenRouter",model},upstream.status,headers)}const images=extractImageUrls(data);const text=extractText(data);if(!images.length)return json({error:"The image model completed but returned no renderable image.",provider:"OpenRouter",model,details:text||null},502,headers);return json({ok:true,provider:"OpenRouter",model,images,text},200,headers)}catch(error){return json({error:readableError(error,"Unable to reach the image generation service."),provider:"OpenRouter",model},502,headers)}}
 async function handleRunway(request,env){const headers=cors(request.headers.get("Origin"));if(request.method==="OPTIONS")return new Response(null,{status:204,headers});if(!env.RUNWAY_API_KEY)return json({error:"Runway is not connected to VANES yet. Configure the private Cloudflare secret RUNWAY_API_KEY."},503,headers);const url=new URL(request.url);const taskId=url.searchParams.get("task");const baseHeaders={Authorization:`Bearer ${env.RUNWAY_API_KEY}`,"Content-Type":"application/json","X-Runway-Version":env.RUNWAY_API_VERSION||"2024-11-06"};try{if(request.method==="GET"&&taskId){const r=await fetch(`${RUNWAY_URL}/tasks/${encodeURIComponent(taskId)}`,{headers:baseHeaders});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw}}return json(data,r.status,headers)}if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);const length=Number(request.headers.get("Content-Length")||0);if(length>MAX_BODY)return json({error:"Video request is too large."},413,headers);let body;try{body=await request.json()}catch{return json({error:"Invalid JSON body."},400,headers)}const prompt=typeof body?.prompt==="string"?body.prompt.trim():"";if(!prompt)return json({error:"Please describe the learning visual or study animation you want."},400,headers);const educationalPrefix="VANES AI educational visual generation. Create a learning-focused visual for a Tanzanian secondary-school learner. Preserve the user’s study intent, factual meaning and age-appropriate presentation. Do not introduce unrelated entertainment, promotional content or unsupported academic claims. User request: ";const model=typeof body.model==="string"&&body.model.trim()?body.model.trim():(env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL);const duration=[5,10].includes(Number(body.duration))?Number(body.duration):5;const ratio=["1280:720","720:1280","1104:832","832:1104","960:960"].includes(body.ratio)?body.ratio:"1280:720";const payload={model,promptText:educationalPrefix+prompt,duration,ratio};if(typeof body.image==="string"&&body.image.trim())payload.promptImage=body.image.trim();const r=await fetch(`${RUNWAY_URL}/image_to_video`,{method:"POST",headers:baseHeaders,body:JSON.stringify(payload)});const raw=await r.text();let data;try{data=JSON.parse(raw)}catch{data={error:raw}}if(!r.ok)return json({error:readableError(data?.error||data,raw||"Runway request failed.")},r.status,headers);return json({ok:true,taskId:data.id||data.task_id||data.taskId,provider:"Runway",status:data.status||"PENDING"},200,headers)}catch(error){return json({error:readableError(error,"Unable to reach Runway.")},502,headers)}}
-export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==="/api/health")return json({ok:true,worker:"vanes-ai",openrouterConfigured:Boolean(env.OPENROUTER_API_KEY),chatProvider:"Mistral / Codestral",chatModel:env.VANES_CHAT_MODEL||"mistralai/codestral-2508",visionModel:env.VANES_VISION_MODEL||"mistralai/pixtral-12b",runwayConfigured:Boolean(env.RUNWAY_API_KEY),maxTokens:DEFAULT_MAX_TOKENS,imageMaxTokens:IMAGE_MAX_TOKENS,imageModel:env.VANES_IMAGE_MODEL||"google/gemini-2.5-flash-image",runwayModel:env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL});if(url.pathname==="/api/contact")return handleContact(request,env);if(url.pathname==="/api/analytics")return handleAnalytics(request,env);if(url.pathname==="/api/admin/analytics")return handleAdminAnalytics(request,env);if(url.pathname==="/api/chat")return handleChat(request,env);if(url.pathname==="/api/image")return handleImage(request,env);if(url.pathname==="/api/video")return handleRunway(request,env);return env.ASSETS.fetch(request)}};
+export default {async fetch(request,env){const url=new URL(request.url);if(url.pathname==="/api/health")return json({ok:true,worker:"vanes-ai",mistralConfigured:Boolean(env.MISTRAL_API_KEY),chatProvider:"Mistral / Codestral",chatModel:env.MISTRAL_MODEL||"codestral-latest",visionModel:env.VANES_VISION_MODEL||"mistralai/pixtral-12b",runwayConfigured:Boolean(env.RUNWAY_API_KEY),maxTokens:DEFAULT_MAX_TOKENS,imageMaxTokens:IMAGE_MAX_TOKENS,imageModel:env.VANES_IMAGE_MODEL||"google/gemini-2.5-flash-image",runwayModel:env.RUNWAY_MODEL||DEFAULT_RUNWAY_MODEL});if(url.pathname==="/api/contact")return handleContact(request,env);if(url.pathname==="/api/analytics")return handleAnalytics(request,env);if(url.pathname==="/api/admin/analytics")return handleAdminAnalytics(request,env);if(url.pathname==="/api/chat")return handleChat(request,env);if(url.pathname==="/api/image")return handleImage(request,env);if(url.pathname==="/api/video")return handleRunway(request,env);return env.ASSETS.fetch(request)}};
