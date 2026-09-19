@@ -135,10 +135,11 @@ function wire(){
  bindSubmit('fieldForm',fieldSubmit);bindClick('fieldButton',fieldSubmit);
  let selectedRating=0;const ratingButtons=document.querySelectorAll('#settings .rating-row button');
  document.querySelectorAll('#settings .settings-tab').forEach((b,i)=>b.onclick=()=>{const targets=['settingsProfileSummary','setStyle','settingsNotifyButton','donateAmount','familyName','feedbackText'];const target=document.getElementById(targets[i]);target?.scrollIntoView({behavior:'smooth',block:'center'});});
- ratingButtons.forEach((b,i)=>b.onclick=(e)=>{e.preventDefault();selectedRating=i+1;ratingButtons.forEach((x,j)=>x.setAttribute('aria-pressed',j<=i?'true':'false'));const status=document.getElementById('feedbackStatus');if(status)status.textContent='Rating selected: '+selectedRating+'/5. Add a comment if you want, then send.'});
+ ratingButtons.forEach((b,i)=>b.onclick=(e)=>{e.preventDefault();selectedRating=i+1;ratingButtons.forEach((x,j)=>x.setAttribute('aria-pressed',j<=i?'true':'false'));const status=document.getElementById('feedbackStatus'),hint=document.getElementById('ratingHint');ratingButtons.forEach((x,j)=>{x.setAttribute('aria-checked',j===i?'true':'false');x.classList.toggle('selected',j<=i)});if(hint)hint.textContent=selectedRating+' out of 5 stars selected';if(status)status.textContent='Rating selected: '+selectedRating+'/5. You can add a comment, then send.'});
  const feedbackSubmit=async e=>{e?.preventDefault();const status=document.getElementById('feedbackStatus'),comment=value('feedbackText'),email=value('feedbackEmail');if(!selectedRating&&!comment){if(status)status.textContent='Choose a rating or enter a comment first.';return}if(selectedRating)return send('rating',{rating:selectedRating,comment,email},status);return send('feedback',{comment,email},status)};
  bindSubmit('feedbackForm',feedbackSubmit);bindClick('feedbackButton',feedbackSubmit);
 document.querySelectorAll('#settings button').forEach(b=>{b.disabled=false;});
+ const feedbackForm=document.getElementById('feedbackForm');if(feedbackForm)feedbackForm.addEventListener('click',e=>{const star=e.target.closest('.rating-row button');if(star)e.stopPropagation()});
 }function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
 function ensureSettings(){
   const section=document.getElementById('settings');
