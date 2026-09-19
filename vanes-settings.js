@@ -66,7 +66,7 @@ function inject(){
   main.appendChild(section);style();wire();
 }
 function style(){if(document.getElementById('vanes-settings-style'))return;const s=document.createElement('style');s.id='vanes-settings-style';s.textContent=`
-#settings{--ios-blue:#0a84ff;--ios-purple:#7b3cff;--ios-bg:rgba(18,24,38,.82);max-width:1180px;margin:auto;padding:10px 10px 80px}
+#settings button,#settings input,#settings select,#settings textarea{pointer-events:auto;position:relative;z-index:5}#settings .settings-ios-layout,#settings .settings-main,#settings .settings-card,#settings .settings-sidebar{pointer-events:auto}#settings{--ios-blue:#0a84ff;--ios-purple:#7b3cff;--ios-bg:rgba(18,24,38,.82);max-width:1180px;margin:auto;padding:10px 10px 80px}
 #settings .settings-ios-head{display:flex;justify-content:space-between;align-items:center;padding:30px 34px;margin-bottom:22px;border:1px solid rgba(76,185,255,.22);border-radius:30px;background:radial-gradient(circle at 85% 30%,rgba(76,185,255,.16),transparent 30%),linear-gradient(145deg,rgba(19,29,47,.96),rgba(7,12,22,.92));box-shadow:0 25px 70px rgba(0,0,0,.3);overflow:hidden}
 #settings .settings-kicker{font-size:11px;letter-spacing:.22em;font-weight:900;color:#4ccfff}
 #settings .settings-ios-head h1{margin:7px 0 5px;font-size:38px;letter-spacing:-.04em}
@@ -134,9 +134,11 @@ function wire(){
  const fieldSubmit=async e=>{e?.preventDefault();const status=document.getElementById('fieldStatus'),p={name:value('fieldName'),phone:value('fieldPhone'),email:value('fieldEmail')};if(!p.name||!p.phone||!p.email){if(status)status.textContent='Please complete your name, phone number and email.';return}return send('field',p,status)};
  bindSubmit('fieldForm',fieldSubmit);bindClick('fieldButton',fieldSubmit);
  let selectedRating=0;const ratingButtons=document.querySelectorAll('#settings .rating-row button');
- ratingButtons.forEach((b,i)=>b.onclick=()=>{selectedRating=i+1;ratingButtons.forEach((x,j)=>x.setAttribute('aria-pressed',j<=i?'true':'false'));const status=document.getElementById('feedbackStatus');if(status)status.textContent='Rating selected: '+selectedRating+'/5. Add a comment if you want, then send.'});
+ document.querySelectorAll('#settings .settings-tab').forEach((b,i)=>b.onclick=()=>{const targets=['settingsProfileSummary','setStyle','settingsNotifyButton','donateAmount','familyName','feedbackText'];const target=document.getElementById(targets[i]);target?.scrollIntoView({behavior:'smooth',block:'center'});});
+ ratingButtons.forEach((b,i)=>b.onclick=(e)=>{e.preventDefault();selectedRating=i+1;ratingButtons.forEach((x,j)=>x.setAttribute('aria-pressed',j<=i?'true':'false'));const status=document.getElementById('feedbackStatus');if(status)status.textContent='Rating selected: '+selectedRating+'/5. Add a comment if you want, then send.'});
  const feedbackSubmit=async e=>{e?.preventDefault();const status=document.getElementById('feedbackStatus'),comment=value('feedbackText'),email=value('feedbackEmail');if(!selectedRating&&!comment){if(status)status.textContent='Choose a rating or enter a comment first.';return}if(selectedRating)return send('rating',{rating:selectedRating,comment,email},status);return send('feedback',{comment,email},status)};
  bindSubmit('feedbackForm',feedbackSubmit);bindClick('feedbackButton',feedbackSubmit);
+document.querySelectorAll('#settings button').forEach(b=>{b.disabled=false;});
 }function route(){const id=location.hash.slice(1);if(id==='settings')go('settings')}
 function ensureSettings(){
   const section=document.getElementById('settings');
