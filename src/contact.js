@@ -35,28 +35,22 @@ Email: ${clean(p.email,150)}`;
 async function email(text,subject,p){
   try{
     const form=new URLSearchParams();
-    form.set("name",clean(p.name,100));
-    form.set("email",clean(p.email,150));
-    form.set("phone",clean(p.phone,40));
-    form.set("subject",subject);
-    form.set("message",text);
-    form.set("_captcha","false");
-    form.set("_template","table");
+    if(clean(p.name,100))form.set("name",clean(p.name,100));
+    if(clean(p.email,150))form.set("email",clean(p.email,150));
+    if(clean(p.phone,40))form.set("phone",clean(p.phone,40));
+    form.set("subject",subject); form.set("message",text);
+    form.set("_captcha","false"); form.set("_template","table");
     const r=await fetch(FORM_SUBMIT_URL,{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
-    const raw=await r.text();
-    let data=null; try{data=raw?JSON.parse(raw):null}catch(_){}
-    if(r.ok && data?.success !== false)return {ok:true};
-    const detail=clean(data?.message||data?.error||raw||("HTTP "+r.status),500);
-    return {ok:false,detail:`FormSubmit HTTP ${r.status}: ${detail}`};
-  }catch(error){
-    return {ok:false,detail:`FormSubmit network error: ${clean(error?.message||error,500)}`};
-  }
+    const raw=await r.text(); let data=null; try{data=raw?JSON.parse(raw):null}catch(_){}
+    if(r.ok&&data?.success!==false)return {ok:true};
+    return {ok:false,detail:`FormSubmit HTTP ${r.status}: ${clean(data?.message||data?.error||raw||("HTTP "+r.status),500)}`};
+  }catch(error){return {ok:false,detail:`FormSubmit network error: ${clean(error?.message||error,500)}`}}
 }
 async function resend(env,text,subject,p){
   if(!env.RESEND_API_KEY)return {ok:false,configured:false};
   const from=clean(env.CONTACT_FROM_EMAIL||"VANES AI <onboarding@resend.dev>",180);
   try{
-    const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from,to:[OWNER_EMAIL],subject,text,reply_to:validEmail(p.email)?clean(p.email,150):undefined})});
+    const r=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":"Bearer "+env.RESEND_API_KEY,"Content-Type":"application/json"},body:JSON.stringify({from,to:[OWNER_EMAIL],subject,text,reply_to:validEmail(p.email)&&p.email?clean(p.email,150):undefined})});
     const raw=await r.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
     return r.ok?{ok:true,configured:true}:{ok:false,configured:true,detail:"Resend HTTP "+r.status+": "+clean(data?.message||data?.error||raw,400)}
   }catch(error){return {ok:false,configured:true,detail:"Resend network error: "+clean(error?.message||error,300)}}
@@ -64,7 +58,8 @@ async function resend(env,text,subject,p){
 async function web3forms(env,text,subject,p){
   if(!env.WEB3FORMS_ACCESS_KEY)return {ok:false,configured:false};
   try{
-    const form=new URLSearchParams({access_key:env.WEB3FORMS_ACCESS_KEY,subject,message:text,from_name:"VANES AI",email:clean(p.email,150)});
+    const form=new URLSearchParams({access_key:env.WEB3FORMS_ACCESS_KEY,subject,message:text,from_name:"VANES AI"});
+    if(clean(p.email,150))form.set("email",clean(p.email,150));
     const r=await fetch("https://api.web3forms.com/submit",{method:"POST",headers:{"Content-Type":"application/x-www-form-urlencoded"},body:form});
     const raw=await r.text();let data=null;try{data=raw?JSON.parse(raw):null}catch(_){}
     return r.ok&&data?.success!==false?{ok:true,configured:true}:{ok:false,configured:true,detail:"Web3Forms HTTP "+r.status+": "+clean(data?.message||data?.error||raw,400)}
@@ -85,11 +80,19 @@ export async function handleContact(request,env){
   let b;try{b=await request.json()}catch{return json({error:"Invalid request."},400)}
   const type=clean(b?.type,30),p=b?.payload||{};
   if(!allowed.has(type))return json({error:"Unsupported request."},400);
-  if(!clean(p.name,100)&&type!=="feedback")return json({error:"Name is required."},400);
-  if(!clean(p.phone,40)&&type!=="feedback")return json({error:"Phone number is required."},400);
-  if(type!=="feedback"&&!validEmail(clean(p.email,150)))return json({error:"Please enter a valid email."},400);
-  if((type==="feedback"||type==="rating")&&!clean(p.comment,3000)&&type==="feedback")return json({error:"Comment is required."},400);
-  if(type==="rating" && (!Number.isFinite(Number(p.rating)) || Number(p.rating)<1 || Number(p.rating)>5))return json({error:"Please choose a rating from 1 to 5."},400);
+
+  // Feedback and ratings intentionally require NO name or phone.
+  // Only feedback comment/email and rating/comment/email are accepted here.
+  if(["feedback","rating"].includes(type)){
+    if(type==="feedback"&&!clean(p.comment,3000))return json({error:"Comment is required."},400);
+    if(type==="rating"&&(!Number.isFinite(Number(p.rating))||Number(p.rating)<1||Number(p.rating)>5))return json({error:"Please choose a rating from 1 to 5."},400);
+    if(!validEmail(clean(p.email,150)))return json({error:"Please enter a valid email."},400);
+  }else{
+    if(!clean(p.name,100))return json({error:"Name is required."},400);
+    if(!clean(p.phone,40))return json({error:"Phone number is required."},400);
+    if(!validEmail(clean(p.email,150)))return json({error:"Please enter a valid email."},400);
+  }
+
   const text=textFor(type,p);
   const subject={donation:"VANES donation request",family:"VANES family membership request",field:"OB Tech-Labs field interest",feedback:"VANES app feedback",rating:"VANES user rating"}[type];
   const ownerTransactionText=type==="donation"&&env.OWNER_AIRTEL_NUMBER?text+`\n\nPRIVATE OWNER PAYMENT ROUTING: ${OWNER_AIRTEL_NETWORK} ${env.OWNER_AIRTEL_NUMBER}`:text;
@@ -97,10 +100,7 @@ export async function handleContact(request,env){
   if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){dbResult={ok:false}}}
   const [resendResult,web3Result,emailResult,smsResult]=await Promise.all([resend(env,ownerTransactionText,subject,p),web3forms(env,ownerTransactionText,subject,p),email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
   const delivered=resendResult.ok||web3Result.ok||emailResult.ok||smsResult.ok;
-  if(!delivered&&!dbResult.ok){
-    const details=[resendResult.detail,web3Result.detail,emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
-    return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503);
-  }
+  if(!delivered&&!dbResult.ok){const details=[resendResult.detail,web3Result.detail,emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503)}
   if(type==="donation")return json({ok:true,message:delivered?"Donation request received. Payment verification is not reported as successful until a supported payment gateway confirms it.":"Donation request received for review."});
   if(type==="rating")return json({ok:true,message:delivered?"Rating received. Thank you for helping improve VANES.":"Rating saved for processing. Thank you."});
   return json({ok:true,message:delivered?"Sent to OB Technologies. Thank you.":"Request saved for processing."});
