@@ -10,10 +10,27 @@ function json(data,status=200){
 function clean(v,max=500){return String(v??"").trim().slice(0,max)}
 function validEmail(v){return !v||/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v)}
 function textFor(type,p){
-  if(type==="donation")return `VANES DONATION REQUEST\nAmount: ${clean(p.amount,30)} ${clean(p.currency,10)}\nMethod: ${clean(p.method,30)}\nName: ${clean(p.name,100)}\nPhone: ${clean(p.phone,40)}\nEmail: ${clean(p.email,150)}`;
-  if(type==="family")return `VANES FAMILY MEMBERSHIP REQUEST\nName: ${clean(p.name,100)}\nPhone: ${clean(p.phone,40)}\nEmail: ${clean(p.email,150)}`;
-  if(type==="field")return `OB TECH-LABS FIELD INTEREST\nName: ${clean(p.name,100)}\nPhone: ${clean(p.phone,40)}\nEmail: ${clean(p.email,150)}`;
-  if(type==="rating")return `VANES USER RATING\nRating: ${clean(p.rating,10)}/5\nComment: ${clean(p.comment,3000)}\nEmail: ${clean(p.email,150)}`;\n  return `VANES FEEDBACK\nComment: ${clean(p.comment,3000)}\nEmail: ${clean(p.email,150)}`;
+  if(type==="donation")return `VANES DONATION REQUEST
+Amount: ${clean(p.amount,30)} ${clean(p.currency,10)}
+Method: ${clean(p.method,30)}
+Name: ${clean(p.name,100)}
+Phone: ${clean(p.phone,40)}
+Email: ${clean(p.email,150)}`;
+  if(type==="family")return `VANES FAMILY MEMBERSHIP REQUEST
+Name: ${clean(p.name,100)}
+Phone: ${clean(p.phone,40)}
+Email: ${clean(p.email,150)}`;
+  if(type==="field")return `OB TECH-LABS FIELD INTEREST
+Name: ${clean(p.name,100)}
+Phone: ${clean(p.phone,40)}
+Email: ${clean(p.email,150)}`;
+  if(type==="rating")return `VANES USER RATING
+Rating: ${clean(p.rating,10)}/5
+Comment: ${clean(p.comment,3000)}
+Email: ${clean(p.email,150)}`;
+  return `VANES FEEDBACK
+Comment: ${clean(p.comment,3000)}
+Email: ${clean(p.email,150)}`;
 }
 async function email(text,subject,p){
   try{
@@ -71,13 +88,15 @@ export async function handleContact(request,env){
   if(!clean(p.name,100)&&type!=="feedback")return json({error:"Name is required."},400);
   if(!clean(p.phone,40)&&type!=="feedback")return json({error:"Phone number is required."},400);
   if(type!=="feedback"&&!validEmail(clean(p.email,150)))return json({error:"Please enter a valid email."},400);
-  if((type==="feedback"||type==="rating")&&!clean(p.comment,3000)&&type==="feedback")return json({error:"Comment is required."},400);\n  if(type==="rating" && !Number.isFinite(Number(p.rating)) || type==="rating" && Number(p.rating)<1 || type==="rating" && Number(p.rating)>5)return json({error:"Please choose a rating from 1 to 5."},400);
+  if((type==="feedback"||type==="rating")&&!clean(p.comment,3000)&&type==="feedback")return json({error:"Comment is required."},400);
+  if(type==="rating" && (!Number.isFinite(Number(p.rating)) || Number(p.rating)<1 || Number(p.rating)>5))return json({error:"Please choose a rating from 1 to 5."},400);
   const text=textFor(type,p);
   const subject={donation:"VANES donation request",family:"VANES family membership request",field:"OB Tech-Labs field interest",feedback:"VANES app feedback",rating:"VANES user rating"}[type];
   const ownerTransactionText=type==="donation"&&env.OWNER_AIRTEL_NUMBER?text+`\n\nPRIVATE OWNER PAYMENT ROUTING: ${OWNER_AIRTEL_NETWORK} ${env.OWNER_AIRTEL_NUMBER}`:text;
   let dbResult={ok:false};
-  if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){}}
-  const [resendResult,web3Result,emailResult,smsResult]=await Promise.all([resend(env,ownerTransactionText,subject,p),web3forms(env,ownerTransactionText,subject,p),email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);\n  const delivered=resendResult.ok||web3Result.ok||emailResult.ok||smsResult.ok;
+  if(env.DB){try{await env.DB.prepare("CREATE TABLE IF NOT EXISTS vanes_contact_submissions (id INTEGER PRIMARY KEY AUTOINCREMENT, type TEXT NOT NULL, name TEXT, email TEXT, phone TEXT, payload TEXT, created_at TEXT NOT NULL)").run();await env.DB.prepare("INSERT INTO vanes_contact_submissions (type,name,email,phone,payload,created_at) VALUES (?1,?2,?3,?4,?5,?6)").bind(type,clean(p.name,100)||null,clean(p.email,150)||null,clean(p.phone,40)||null,JSON.stringify(p),new Date().toISOString()).run();dbResult={ok:true}}catch(_){dbResult={ok:false}}}
+  const [resendResult,web3Result,emailResult,smsResult]=await Promise.all([resend(env,ownerTransactionText,subject,p),web3forms(env,ownerTransactionText,subject,p),email(ownerTransactionText,subject,p),sms(env,ownerTransactionText)]);
+  const delivered=resendResult.ok||web3Result.ok||emailResult.ok||smsResult.ok;
   if(!delivered&&!dbResult.ok){
     const details=[resendResult.detail,web3Result.detail,emailResult.detail,smsResult.detail].filter(Boolean).join(" | ");
     return json({error:"VANES could not deliver the request.",detail:details||"No delivery channel is configured.",code:503},503);
