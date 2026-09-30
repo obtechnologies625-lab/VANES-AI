@@ -6,17 +6,3 @@ workers_dev = true
 [assets]
 directory = "."
 binding = "ASSETS"
-exclude = [
-  ".git/**",
-  ".wrangler/**",
-  ".github/**",
-  "src/**",
-  "functions/**",
-  "api/**",
-  "docs/**",
-  "DATABASE_SETUP.md",
-  "schema.sql",
-  "admin-analytics.html",
-  "wrangler.toml",
-  "vercel.json"
-]

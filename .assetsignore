@@ -1,0 +1,23 @@
+# Wrangler skips anything matched here when uploading static assets.
+# Same syntax as .gitignore. The assets directory is the repo root, so
+# without this file the Worker source, CI config and DB schema get
+# published as public static files.
+
+# Created inside the checkout by the CI wrangler install
+node_modules/
+.wrangler/
+
+# Source, config and docs that must never be served as static assets
+.git/
+.github/
+src/
+functions/
+api/
+docs/
+google-apps-script/
+DATABASE_SETUP.md
+schema.sql
+admin-analytics.html
+wrangler.toml
+vercel.json
+.assetsignore
