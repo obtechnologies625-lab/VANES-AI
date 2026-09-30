@@ -1,1 +1,0 @@
-/* Deprecated compatibility file intentionally left empty. The main runtime is authoritative. */
