@@ -1,4 +1,4 @@
-const CACHE = 'vanes-shell-v30';
+const CACHE = 'vanes-shell-v31';
 const BASE = new URL('./', self.registration.scope);
 const APP_FILES = [
   'index.html',

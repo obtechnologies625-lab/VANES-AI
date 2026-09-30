@@ -1,1 +1,25 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" role="img" aria-labelledby="t"><title id="t">OB Technologies Lab cyberpunk brain with orbital halos</title><defs><radialGradient id="b"><stop stop-color="#111c3b"/><stop offset=".7" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient><linearGradient id="n" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00eaff"/><stop offset=".48" stop-color="#7b55ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient><filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="6" result="x"/><feMerge><feMergeNode in="x"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="760" height="520" rx="70" fill="url(#b)"/><g transform="translate(380 215)" fill="none" filter="url(#g)"><ellipse rx="280" ry="98" stroke="url(#n)" stroke-width="8" transform="rotate(-18)"/><ellipse rx="235" ry="78" stroke="#cfffff" stroke-width="3" transform="rotate(18)"/><ellipse rx="175" ry="58" stroke="#00eaff" stroke-width="3" transform="rotate(4)"/><ellipse rx="310" ry="115" stroke="#7654ff" stroke-width="2" stroke-dasharray="8 12" transform="rotate(-7)"/><path d="M0-108c-70-7-120 38-114 97 6 56 48 101 114 101s108-45 114-101c6-59-44-104-114-97Z" stroke="#e9ffff" stroke-width="8"/><path d="M0-102V85M-91-29c34 14 50 34 42 58M91-29c-34 14-50 34-42 58M-70-73c39 14 51 40 38 70M70-73c-39 14-51 40-38 70M-80 49c32-19 59-19 80 4 21-23 48-23 80-4" stroke="url(#n)" stroke-width="8" stroke-linecap="round"/></g><text x="380" y="408" text-anchor="middle" fill="#f3fbff" font-family="Arial,sans-serif" font-size="42" font-weight="900" letter-spacing="4">OB TECH-LABS</text><text x="380" y="447" text-anchor="middle" fill="url(#n)" font-family="Arial,sans-serif" font-size="18" font-weight="700" letter-spacing="7">INNOVATION · TECHNOLOGY · IMPACT</text></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 520" role="img" aria-labelledby="obbT obbD">
+<title id="obbT">OB Tech-Labs neural brain emblem</title>
+<desc id="obbD">A wireframe plexus brain of glowing nodes and links, crossed by one cyan and one magenta orbital ring, in the OB Tech-Labs cyberpunk style.</desc>
+<defs>
+  <radialGradient id="obbBg" cx=".5" cy=".42" r=".85"><stop stop-color="#111c3b"/><stop offset=".7" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient>
+  <linearGradient id="obbNeon" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00eaff"/><stop offset=".48" stop-color="#7b55ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient>
+  <filter id="obbGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="760" height="520" rx="44" fill="url(#obbBg)"/>
+<g fill="none" filter="url(#obbGlow)">
+  <ellipse cx="380" cy="268" rx="332" ry="118" stroke="#22d9ff" stroke-width="4" transform="rotate(-16 380 268)"/>
+  <ellipse cx="380" cy="268" rx="342" ry="128" stroke="#e04cff" stroke-width="4" transform="rotate(15 380 268)"/>
+  <ellipse cx="380" cy="268" rx="300" ry="96" stroke="#7b55ff" stroke-width="1.5" stroke-dasharray="5 9" transform="rotate(-4 380 268)" opacity=".7"/>
+</g>
+<g stroke="#4fd8ff" stroke-width="1.3" opacity=".5">
+  <path d="M300 120 380 102 458 128 520 178 548 244 522 308 458 352 382 368 302 352 242 306 222 240 248 172Z"/>
+  <path d="M300 120 338 190M380 102 338 190M380 102 420 196M458 128 420 196M520 178 472 244M420 196 472 244M548 244 472 244M522 308 432 296M472 244 432 296M458 352 432 296M382 368 352 296M432 296 352 296M302 352 352 296M242 306 300 244M352 296 300 244M222 240 300 244M248 172 338 190M300 244 338 190M338 190 382 244M420 196 382 244M472 244 382 244M432 296 382 244M352 296 382 244M300 244 382 244"/>
+</g>
+<path d="M380 92C300 88 236 128 226 196c-7 50 14 86 10 120-3 32 26 54 66 54 30 0 50-12 80-10 40 3 60 18 100 10 40-8 64-38 64-78 0-30 14-46 10-80-7-56-86-116-176-120Z" fill="none" stroke="#e9ffff" stroke-width="3" opacity=".85"/>
+<path d="M470 366c16 20 38 26 56 22" fill="none" stroke="#e9ffff" stroke-width="3" opacity=".7"/>
+<g filter="url(#obbGlow)">
+  <g fill="#8ff6ff"><circle cx="300" cy="120" r="4"/><circle cx="458" cy="128" r="4"/><circle cx="548" cy="244" r="4"/><circle cx="458" cy="352" r="4"/><circle cx="302" cy="352" r="4"/><circle cx="222" cy="240" r="4"/><circle cx="420" cy="196" r="4"/><circle cx="432" cy="296" r="4"/><circle cx="300" cy="244" r="4"/></g>
+  <g fill="#f58bff"><circle cx="380" cy="102" r="5"/><circle cx="520" cy="178" r="5"/><circle cx="522" cy="308" r="5"/><circle cx="382" cy="368" r="5"/><circle cx="242" cy="306" r="5"/><circle cx="248" cy="172" r="5"/><circle cx="338" cy="190" r="5"/><circle cx="472" cy="244" r="5"/><circle cx="352" cy="296" r="5"/><circle cx="382" cy="244" r="6"/></g>
+</g>
+</svg>

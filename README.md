@@ -2,13 +2,13 @@
 
 ![VANES AI product showcase](assets/vanes-product-showcase.svg)
 
-**VANES AI — Verseversatile Adaptive Neuro Emergent System** is an online, learner-friendly AI study companion designed around the Tanzanian secondary-school curriculum.
+**VANES AI — Versatile Adaptive Neuro Emergent System** is an online, learner-friendly AI study companion designed around the Tanzanian secondary-school curriculum.
 
-![VANES AI six turbine wheel](assets/vanes-turbine-wheel.svg)
+![VANES AI — Versatile Adaptive Neuro Emergent System](assets/vanes-logo-lockup.svg)
 
 **Made by OB Technologies Lab**
 
-![OB Tech-Labs cyberpunk brain](assets/ob-tech-labs-brain.svg)
+<img src="assets/ob-tech-labs-brand.jpg" alt="OB Tech-Labs — Technology that impacts: AI, robotics, cybernetics, data, future" width="330">
 
 ## ▶️ Watch how VANES works
 
@@ -122,7 +122,7 @@ Advanced Mathematics, Economics, History, Geography, Physics, Chemistry, Biology
 
 ## 🎨 Cyberpunk identity
 
-VANES AI uses a **six-turbine wheel** visual identity with a cyberpunk neon treatment. OB Technologies Lab uses a **brain surrounded by orbital halos**, also in a cyberpunk technology style. The same identity is used across the app dashboard, navigation branding, the installable icons (`assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) and this README showcase.
+VANES AI uses a **six-turbine wheel** visual identity with a cyberpunk neon treatment, drawn bold enough to stay legible at the 32px navigation size; `assets/vanes-logo-lockup.svg` pairs the wheel with the wordmark and the full name for places with room, like this README. OB Technologies Lab's identity is the brand poster above: a **segmented hexagon mark** (cyan left, magenta right) with the *INNOVATE • BUILD • IMPACT* lockup (`assets/ob-technologies-lab.svg`) and a **plexus brain crossed by two orbital rings** (`assets/ob-tech-labs-brain.svg`). The same identity is used across the app dashboard, navigation branding, the installable icons (`assets/icon-192.png`, `icon-512.png`, `icon-maskable-512.png`) and this README showcase.
 
 ## 🔐 AI security and configuration
 

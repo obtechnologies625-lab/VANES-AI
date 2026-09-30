@@ -1,1 +1,35 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 260" role="img" aria-labelledby="title desc"><title id="title">OB Technologies Lab cyberpunk brain</title><desc id="desc">A detailed glowing brain surrounded by multiple futuristic orbital halos</desc><defs><radialGradient id="bg"><stop stop-color="#111c3b"/><stop offset=".7" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient><linearGradient id="neon" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00eaff"/><stop offset=".48" stop-color="#7b55ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient><filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="760" height="260" rx="44" fill="url(#bg)"/><g transform="translate(132 126)" fill="none" filter="url(#glow)"><ellipse rx="108" ry="44" stroke="url(#neon)" stroke-width="5" transform="rotate(-18)"/><ellipse rx="121" ry="52" stroke="#bffcff" stroke-width="2" transform="rotate(18)" opacity=".8"/><ellipse rx="91" ry="34" stroke="#00eaff" stroke-width="2" transform="rotate(4)"/><ellipse rx="134" ry="60" stroke="#7654ff" stroke-width="1.5" stroke-dasharray="5 8" transform="rotate(-7)"/><path d="M0-67c-43-4-72 24-68 59 3 34 29 61 68 61s65-27 68-61c4-35-25-63-68-59Z" stroke="#e9ffff" stroke-width="5"/><path d="M0-64V51M-55-18c20 8 30 20 25 35M55-18c-20 8-30 20-25 35M-42-45c24 9 32 24 24 42M42-45c-24 9-32 24-24 42M-49 30c20-12 36-12 49 2 13-14 29-14 49-2" stroke="url(#neon)" stroke-width="5" stroke-linecap="round"/><path d="M-68-2h24M44-2h24M-26-60l8 18M26-60l-8 18" stroke="#00eaff" stroke-width="3"/></g><g font-family="Arial,sans-serif"><text x="292" y="105" font-size="39" font-weight="900" fill="#f3fbff" letter-spacing="1">OB TECH-LABS</text><text x="294" y="146" font-size="22" font-weight="800" fill="url(#neon)" letter-spacing="8">INNOVATION · TECHNOLOGY</text><text x="296" y="178" font-size="16" font-weight="600" fill="#9eb2cf" letter-spacing="4">IMPACT · AI · FUTURE</text></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 760 200" role="img" aria-labelledby="oblT oblD">
+<title id="oblT">OB Tech-Labs logo</title>
+<desc id="oblD">A segmented hexagon mark, half cyan and half magenta, beside the OB TECH-LABS wordmark and the tagline Innovate, Build, Impact.</desc>
+<defs>
+  <radialGradient id="oblBg" cx=".5" cy=".4" r=".9"><stop stop-color="#101a3a"/><stop offset=".7" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient>
+  <linearGradient id="oblCyan" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#8ff6ff"/><stop offset=".5" stop-color="#22d9ff"/><stop offset="1" stop-color="#00b3e6"/></linearGradient>
+  <linearGradient id="oblMag" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#f58bff"/><stop offset=".5" stop-color="#e04cff"/><stop offset="1" stop-color="#c81ee0"/></linearGradient>
+  <linearGradient id="oblRule" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#22d9ff"/><stop offset=".5" stop-color="#7b55ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient>
+  <filter id="oblGlow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="760" height="200" rx="34" fill="url(#oblBg)"/>
+<g transform="translate(112 100)" filter="url(#oblGlow)">
+  <g stroke-linecap="butt" fill="none" stroke-width="13">
+    <path d="M6.44-58.28 47.26-34.72" stroke="url(#oblMag)"/>
+    <path d="M53.7-23.56V23.56" stroke="url(#oblMag)"/>
+    <path d="M47.26 34.72 6.44 58.28" stroke="url(#oblMag)"/>
+    <path d="M-6.44 58.28-47.26 34.72" stroke="url(#oblCyan)"/>
+    <path d="M-53.7 23.56V-23.56" stroke="url(#oblCyan)"/>
+    <path d="M-47.26-34.72-6.44-58.28" stroke="url(#oblCyan)"/>
+  </g>
+  <g fill="none" stroke-width="7">
+    <path d="M0-30-26-15V15L0 30" stroke="url(#oblCyan)"/>
+    <path d="M0-30 26-15V15L0 30" stroke="url(#oblMag)"/>
+  </g>
+</g>
+<g font-family="'Segoe UI',Roboto,Arial,sans-serif">
+  <text x="212" y="98" font-size="54" font-weight="900" letter-spacing="7" fill="#f3fbff"><tspan fill="#22d9ff">OB</tspan> TECH-LABS</text>
+  <g>
+    <rect x="214" y="116" width="238" height="3" fill="url(#oblRule)"/>
+    <rect x="462" y="112.5" width="10" height="10" transform="rotate(45 467 117.5)" fill="#ff2bd6"/>
+    <rect x="482" y="116" width="238" height="3" fill="url(#oblRule)"/>
+  </g>
+  <text x="216" y="156" font-size="21" font-weight="700" letter-spacing="9" fill="#cfe3f2">INNOVATE <tspan fill="#ff2bd6">•</tspan> BUILD <tspan fill="#ff2bd6">•</tspan> IMPACT</text>
+</g>
+</svg>

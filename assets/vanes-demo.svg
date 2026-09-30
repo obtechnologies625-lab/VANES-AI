@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 960 540" role="img" aria-labelledby="vdTitle vdDesc" preserveAspectRatio="xMidYMid meet">
 <title id="vdTitle">How to use VANES AI — animated four-step demo</title>
-<desc id="vdDesc">An animated walkthrough of the VANES AI study app. Step 1: type one question per line in the AI study coach. Step 2: VANES answers each question separately and shows an answer queue. Step 3: generate a study plan, save it to the Study Shelf and track the session time. Step 4: the same app reshapes itself for phone, tablet and desktop screens.</desc>
+<desc id="vdDesc">An animated walkthrough drawn with the real VANES AI interface. Step 1: type one question per line in the Ask VANES coach panel. Step 2: the answer queue works through each question separately. Step 3: the planner creates a plan that saves to the Study Shelf and tracks study time. Step 4: the layout adapts to phone, tablet and desktop.</desc>
 
 <defs>
   <linearGradient id="vdBg" x1="0" y1="0" x2="1" y2="1">
@@ -18,14 +18,18 @@
     <stop offset="0" stop-color="#27e9ff"/>
     <stop offset="1" stop-color="#ff2bd6"/>
   </linearGradient>
+  <linearGradient id="vdBtn" x1="0" y1="0" x2="1" y2="1">
+    <stop offset="0" stop-color="#1468ff"/>
+    <stop offset="1" stop-color="#9c2cff"/>
+  </linearGradient>
   <filter id="vdGlow" x="-60%" y="-60%" width="220%" height="220%">
     <feGaussianBlur stdDeviation="4" result="b"/>
     <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
   </filter>
   <!-- Each line of the message types itself in: the clip rect grows from 0 to full width. -->
-  <clipPath id="vdType1"><rect x="84" y="238" width="290" height="26"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;290;290" keyTimes="0;.0321;.0786;1"/></rect></clipPath>
-  <clipPath id="vdType2"><rect x="84" y="266" width="290" height="26"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;290;290" keyTimes="0;.0821;.1286;1"/></rect></clipPath>
-  <clipPath id="vdType3"><rect x="84" y="294" width="290" height="26"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;290;290" keyTimes="0;.1321;.1786;1"/></rect></clipPath>
+  <clipPath id="vdType1"><rect x="82" y="212" width="340" height="22"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;340;340" keyTimes="0;.0321;.0786;1"/></rect></clipPath>
+  <clipPath id="vdType2"><rect x="82" y="236" width="340" height="22"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;340;340" keyTimes="0;.0821;.1286;1"/></rect></clipPath>
+  <clipPath id="vdType3"><rect x="82" y="260" width="340" height="22"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;340;340" keyTimes="0;.1321;.1786;1"/></rect></clipPath>
 </defs>
 
 <style>
@@ -34,13 +38,18 @@
   .vd-step{font:600 21px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#eaf7ff}
   .vd-body{font:400 14px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#c6dced}
   .vd-cap{font:400 13px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#8fa8bd}
-  .vd-ui{font:600 12px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#eaf7ff}
-  .vd-uism{font:400 11px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#a9bfd3}
-  .vd-q{font:400 13px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#dff4ff}
-  .vd-a{font:400 12px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#c6dced}
+  .vd-eb{font:800 8px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#63b4d9;letter-spacing:1.2px}
+  .vd-h1{font:800 16px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#f4fbff}
+  .vd-ui{font:600 11px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#eaf7ff}
+  .vd-btn{font:700 8.5px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#d5efff}
+  .vd-uism{font:400 9px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#a9bfd3}
+  .vd-q{font:400 12px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#111827}
+  .vd-qb{font:400 11px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#ffffff}
+  .vd-a{font:400 10.5px "Segoe UI",Roboto,Helvetica,Arial,sans-serif;fill:#c6dced}
   .vd-card{fill:#081526;stroke:#126da8;stroke-opacity:.5}
-  .vd-in{fill:#04101e;stroke:#1a4f77}
+  .vd-in{fill:#f7fbff;stroke:#1975ad}
   .vd-pill{fill:#0d2136;stroke:#1a4f77}
+  .vd-bar{fill:#0b1e33;stroke:#1a4f77}
 </style>
 
 <rect width="960" height="540" fill="url(#vdBg)"/>
@@ -49,8 +58,7 @@
 <!-- ================= header ================= -->
 <g transform="translate(58,48)" filter="url(#vdGlow)">
   <g transform="scale(.135)">
-    <circle r="188" fill="none" stroke="url(#vdNeon)" stroke-width="16"/>
-    <circle r="168" fill="none" stroke="#cfffff" stroke-width="6" stroke-dasharray="14 12" opacity=".65"/>
+    <circle r="206" fill="none" stroke="url(#vdNeon)" stroke-width="16"/>
     <g fill="url(#vdNeon)" stroke="#e6ffff" stroke-width="8">
       <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z"/>
       <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(60)"/>
@@ -59,8 +67,9 @@
       <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(240)"/>
       <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(300)"/>
     </g>
-    <circle r="62" fill="#070d20" stroke="url(#vdNeon)" stroke-width="18"/>
-    <circle r="20" fill="url(#vdNeon)"/>
+    <circle r="74" fill="#070d20" stroke="url(#vdNeon)" stroke-width="16"/>
+    <circle r="42" fill="#101936" stroke="#d7fbff" stroke-width="6"/>
+    <circle r="19" fill="url(#vdNeon)"/>
   </g>
   <animateTransform attributeName="transform" type="rotate" from="0" to="360" dur="28s" repeatCount="indefinite" additive="sum"/>
 </g>
@@ -78,20 +87,34 @@
 <g opacity="1">
   <animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;1;1;0;0" keyTimes="0;.004;.24;.25;1"/>
   <rect class="vd-card" x="58" y="106" width="384" height="356" rx="18"/>
-  <text class="vd-ui" x="80" y="136">AI STUDY COACH</text>
-  <text class="vd-uism" x="80" y="156">Ask VANES anything you are studying</text>
-  <rect class="vd-in" x="80" y="176" width="340" height="212" rx="12"/>
-  <text class="vd-uism" x="92" y="200">O-Level · Biology, Chemistry, Kiswahili</text>
-  <line x1="92" y1="214" x2="408" y2="214" stroke="#1a4f77"/>
-  <g clip-path="url(#vdType1)"><text class="vd-q" x="92" y="256">Explain photosynthesis</text></g>
-  <g clip-path="url(#vdType2)"><text class="vd-q" x="92" y="284">Solve 2x + 5 = 17</text></g>
-  <g clip-path="url(#vdType3)"><text class="vd-q" x="92" y="312">Nieleze kwa Kiswahili</text></g>
-  <rect x="80" y="336" width="340" height="2" fill="#27e9ff" opacity=".75"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;340;340" keyTimes="0;.0321;.1786;1"/></rect>
-  <text class="vd-uism" x="80" y="412">Enter sends · Shift+Enter makes a new line</text>
+  <text class="vd-eb" x="76" y="128">ONLINE AI ASSISTANCE</text>
+  <text class="vd-h1" x="76" y="146">AI study coach</text>
+
+  <!-- the real Ask VANES head bar -->
+  <rect class="vd-bar" x="74" y="156" width="352" height="40" rx="10"/>
+  <text x="90" y="181" font-size="13" fill="#5eefff">✦</text>
+  <text class="vd-ui" x="104" y="172">Ask VANES</text>
+  <text class="vd-uism" x="104" y="186">Photosynthesis · O-Level · Biology, Chemistry, Kiswahili</text>
+  <g><rect x="246" y="166" width="40" height="20" rx="6" fill="#0d2136" stroke="#1a4f77"/><text class="vd-btn" x="266" y="179" text-anchor="middle">＋ New</text></g>
+  <g><rect x="290" y="166" width="52" height="20" rx="6" fill="#0d2136" stroke="#1a4f77"/><text class="vd-btn" x="316" y="179" text-anchor="middle">☰ History</text></g>
+  <g><rect x="346" y="166" width="46" height="20" rx="6" fill="#2a1020" stroke="#7a2b45"/><text class="vd-btn" x="369" y="179" text-anchor="middle" fill="#ff9eb5">⌫ Clear</text></g>
+
+  <!-- the real composer: light textarea + three buttons -->
+  <rect class="vd-in" x="74" y="204" width="352" height="84" rx="10"/>
+  <g clip-path="url(#vdType1)"><text class="vd-q" x="84" y="228">Explain photosynthesis</text></g>
+  <g clip-path="url(#vdType2)"><text class="vd-q" x="84" y="252">Solve 2x + 5 = 17</text></g>
+  <g clip-path="url(#vdType3)"><text class="vd-q" x="84" y="276">Nieleze kwa Kiswahili</text></g>
+  <rect x="74" y="292" width="352" height="2" fill="#27e9ff" opacity=".7"><animate attributeName="width" dur="28s" repeatCount="indefinite" values="0;0;352;352" keyTimes="0;.0321;.1786;1"/></rect>
+  <g><rect x="346" y="296" width="26" height="26" rx="8" fill="#082b48" stroke="#00dfff"/><text x="359" y="314" font-size="12" fill="#5beaff" text-anchor="middle">⌑</text></g>
+  <g><rect x="376" y="296" width="26" height="26" rx="8" fill="url(#vdBtn)"/><text x="389" y="314" font-size="12" fill="#fff" text-anchor="middle">✧</text></g>
+  <g><rect x="406" y="296" width="20" height="26" rx="8" fill="url(#vdBtn)"/><text x="416" y="314" font-size="12" fill="#fff" text-anchor="middle">↑</text></g>
+  <text class="vd-uism" x="74" y="340">Enter sends · Shift+Enter makes a new line · one question per line</text>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.1857;.1964;1"/>
-    <rect x="80" y="424" width="106" height="26" rx="13" fill="#17663f"/>
-    <text class="vd-ui" x="133" y="441" text-anchor="middle">3 questions</text>
+    <rect x="74" y="350" width="106" height="24" rx="12" fill="#17663f"/>
+    <text class="vd-ui" x="127" y="366" text-anchor="middle">3 questions</text>
   </g>
+  <text class="vd-uism" x="74" y="400">⌑ marks a photo for analysis · ✧ generates a study image</text>
+  <text class="vd-uism" x="74" y="416">Up to 6 questions per message — extras are reported, not dropped</text>
 
   <text class="vd-step" x="480" y="146">1 · Ask your study coach</text>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.0393;.05;1"/>
@@ -101,7 +124,7 @@
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.1393;.15;1"/>
     <circle cx="488" cy="248" r="3" fill="#ff2bd6"/><text class="vd-body" x="504" y="253">English or Kiswahili — both are fine.</text></g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.1929;.2036;1"/>
-    <circle cx="488" cy="280" r="3" fill="#3ddc97"/><text class="vd-body" x="504" y="285">Up to 6 questions in one message.</text></g>
+    <circle cx="488" cy="280" r="3" fill="#3ddc97"/><text class="vd-body" x="504" y="285">＋ New, ☰ History and ⌫ Clear sit in the panel head.</text></g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.2143;.225;1"/>
     <rect class="vd-pill" x="480" y="316" width="412" height="86" rx="14"/>
     <text class="vd-ui" x="500" y="344">⌑  upload a photo of your work to be marked</text>
@@ -114,34 +137,51 @@
 <g opacity="0">
   <animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.25;.254;.49;.5;1"/>
   <rect class="vd-card" x="58" y="106" width="404" height="356" rx="18"/>
-  <text class="vd-ui" x="80" y="134">PHOTOSYNTHESIS · BIOLOGY</text>
+  <rect class="vd-bar" x="74" y="118" width="372" height="34" rx="9"/>
+  <text x="88" y="139" font-size="12" fill="#5eefff">✦</text>
+  <text class="vd-ui" x="100" y="132">Ask VANES</text>
+  <text class="vd-uism" x="100" y="145">Photosynthesis · O-Level · Biology, Chemistry, Kiswahili</text>
+  <g><rect x="352" y="126" width="46" height="19" rx="6" fill="#2a1020" stroke="#7a2b45"/><text class="vd-btn" x="375" y="139" text-anchor="middle" fill="#ff9eb5">⌫ Clear</text></g>
+  <g><rect x="300" y="126" width="48" height="19" rx="6" fill="#0d2136" stroke="#1a4f77"/><text class="vd-btn" x="324" y="139" text-anchor="middle">☰ History</text></g>
+
+  <!-- the real answer queue -->
+  <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.2643;.275;1"/>
+    <rect class="vd-bar" x="74" y="158" width="372" height="46" rx="9"/>
+    <text class="vd-uism" x="84" y="172" fill="#8feaff">Answering question 2 of 3 separately</text>
+    <g><rect x="84" y="178" width="112" height="18" rx="9" fill="#0f2b1e" stroke="#2c7a52"/><text class="vd-btn" x="92" y="190" fill="#7ee2ae">1 ✓ Explain photosyn…</text></g>
+    <g><rect x="202" y="178" width="112" height="18" rx="9" fill="#12233d" stroke="#27e9ff"/><text class="vd-btn" x="210" y="190" fill="#9fe9ff">2 … Solve 2x + 5 = 17</text></g>
+    <g><rect x="320" y="178" width="112" height="18" rx="9" fill="#0d2136" stroke="#1a4f77"/><text class="vd-btn" x="328" y="190" fill="#8fa8bd">3 · Nieleze kwa Kisw…</text></g>
+  </g>
 
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.2643;.275;1"/>
-    <rect x="238" y="146" width="204" height="26" rx="13" fill="#7d35ff" fill-opacity=".28" stroke="#7d35ff"/>
-    <text class="vd-q" x="432" y="163" text-anchor="end">Explain photosynthesis</text>
-    <rect x="80" y="180" width="330" height="60" rx="12" fill="#0d2136" stroke="#1a4f77"/>
-    <text class="vd-a" x="94" y="202">Plants use light energy, carbon dioxide and water</text>
-    <text class="vd-a" x="94" y="221">to make glucose and release oxygen.</text>
+    <rect x="246" y="212" width="186" height="22" rx="11" fill="#6356c9"/>
+    <text class="vd-qb" x="424" y="227" text-anchor="end">Explain photosynthesis</text>
+    <rect x="74" y="240" width="20" height="20" rx="6" fill="#062b49" stroke="#00a9dc"/><text x="84" y="254" font-size="10" fill="#6cecff" text-anchor="middle">✦</text>
+    <rect x="100" y="238" width="274" height="42" rx="10" fill="#202b3b"/>
+    <text class="vd-a" x="112" y="255">Plants use light energy, carbon dioxide and</text>
+    <text class="vd-a" x="112" y="271">water to make glucose and release oxygen.</text>
   </g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.3286;.3393;1"/>
-    <rect x="272" y="250" width="170" height="26" rx="13" fill="#7d35ff" fill-opacity=".28" stroke="#7d35ff"/>
-    <text class="vd-q" x="432" y="267" text-anchor="end">Solve 2x + 5 = 17</text>
-    <rect x="80" y="284" width="330" height="46" rx="12" fill="#0d2136" stroke="#1a4f77"/>
-    <text class="vd-a" x="94" y="304">2x = 12, so x = 6.</text>
-    <text class="vd-a" x="94" y="322">Check: 2(6) + 5 = 17 ✓</text>
+    <rect x="276" y="288" width="156" height="22" rx="11" fill="#6356c9"/>
+    <text class="vd-qb" x="424" y="303" text-anchor="end">Solve 2x + 5 = 17</text>
+    <rect x="74" y="316" width="20" height="20" rx="6" fill="#062b49" stroke="#00a9dc"/><text x="84" y="330" font-size="10" fill="#6cecff" text-anchor="middle">✦</text>
+    <rect x="100" y="314" width="274" height="36" rx="10" fill="#202b3b"/>
+    <text class="vd-a" x="112" y="330">2x = 12, so x = 6.</text>
+    <text class="vd-a" x="112" y="344">Check: 2(6) + 5 = 17 ✓</text>
   </g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.3929;.4036;1"/>
-    <rect x="252" y="340" width="190" height="26" rx="13" fill="#7d35ff" fill-opacity=".28" stroke="#7d35ff"/>
-    <text class="vd-q" x="432" y="357" text-anchor="end">Nieleze kwa Kiswahili</text>
-    <rect x="80" y="374" width="330" height="60" rx="12" fill="#0d2136" stroke="#1a4f77"/>
-    <text class="vd-a" x="94" y="396">Fotosintesis ni mchakato ambao mimea</text>
-    <text class="vd-a" x="94" y="415">hutumia nuru kutengeneza chakula chake.</text>
+    <rect x="256" y="358" width="176" height="22" rx="11" fill="#6356c9"/>
+    <text class="vd-qb" x="424" y="373" text-anchor="end">Nieleze kwa Kiswahili</text>
+    <rect x="74" y="386" width="20" height="20" rx="6" fill="#062b49" stroke="#00a9dc"/><text x="84" y="400" font-size="10" fill="#6cecff" text-anchor="middle">✦</text>
+    <rect x="100" y="384" width="274" height="42" rx="10" fill="#202b3b"/>
+    <text class="vd-a" x="112" y="401">Fotosintesis ni mchakato ambao mimea hutumia</text>
+    <text class="vd-a" x="112" y="417">nuru kutengeneza chakula chake.</text>
   </g>
-  <text class="vd-uism" x="80" y="452"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.45;.4607;1"/>Clear wipes the conversation — press it twice to confirm.</text>
+  <text class="vd-uism" x="74" y="448"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.45;.4607;1"/>⌫ Clear needs a second press within 3.5s — a mis-tap cannot wipe a session.</text>
 
   <text class="vd-step" x="496" y="146">2 · Each one answered separately</text>
   <rect class="vd-card" x="496" y="164" width="406" height="200" rx="16"/>
-  <text class="vd-ui" x="518" y="192">ANSWER QUEUE</text>
+  <text class="vd-ui" x="518" y="192">ANSWER QUEUE — HOW TURNS RUN</text>
 
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.2714;.2821;1"/>
     <rect class="vd-pill" x="518" y="206" width="362" height="38" rx="10"/>
@@ -169,57 +209,60 @@
 <g opacity="0">
   <animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.5;.504;.74;.75;1"/>
   <rect class="vd-card" x="58" y="106" width="404" height="356" rx="18"/>
-  <text class="vd-ui" x="80" y="134">STUDY PLAN · BIOLOGY · 45 MIN</text>
-  <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.5214;.5321;1"/>
-    <rect class="vd-pill" x="80" y="150" width="360" height="44" rx="11"/>
-    <text class="vd-ui" x="98" y="176" fill="#27e9ff">01</text>
-    <text class="vd-body" x="128" y="170">Read: structure of a leaf</text>
-    <text class="vd-uism" x="128" y="187">10 min</text>
+  <text class="vd-eb" x="76" y="128">STUDY PLANNER</text>
+  <text class="vd-h1" x="76" y="146">Make a study plan</text>
+  <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.51;.5207;1"/>
+    <text class="vd-uism" x="76" y="164">SUBJECT</text>
+    <rect class="vd-pill" x="76" y="170" width="168" height="26" rx="8"/><text class="vd-ui" x="88" y="187">Biology</text>
+    <text class="vd-uism" x="254" y="164">GOAL</text>
+    <rect class="vd-pill" x="254" y="170" width="172" height="26" rx="8"/><text class="vd-ui" x="266" y="187">Understand photosynthesis</text>
+    <text class="vd-uism" x="76" y="212">TIME (MIN)</text>
+    <rect class="vd-pill" x="76" y="218" width="80" height="26" rx="8"/><text class="vd-ui" x="88" y="235">45</text>
+    <rect x="166" y="218" width="116" height="26" rx="8" fill="url(#vdBtn)"/><text class="vd-ui" x="224" y="235" text-anchor="middle">Create my plan</text>
   </g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.5429;.5536;1"/>
-    <rect class="vd-pill" x="80" y="202" width="360" height="44" rx="11"/>
-    <text class="vd-ui" x="98" y="228" fill="#7654ff">02</text>
-    <text class="vd-body" x="128" y="222">Draw and label the diagram</text>
-    <text class="vd-uism" x="128" y="239">12 min</text>
-  </g>
-  <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.5643;.575;1"/>
-    <rect class="vd-pill" x="80" y="254" width="360" height="44" rx="11"/>
-    <text class="vd-ui" x="98" y="280" fill="#ff2bd6">03</text>
-    <text class="vd-body" x="128" y="274">Practise 5 CSEE questions</text>
-    <text class="vd-uism" x="128" y="291">15 min</text>
-  </g>
-  <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.5857;.5964;1"/>
-    <rect x="80" y="312" width="176" height="34" rx="17" fill="#12385c" stroke="#27e9ff"/>
-    <text class="vd-ui" x="168" y="334" text-anchor="middle">Save to Shelf</text>
-    <rect x="266" y="312" width="174" height="34" rx="17" fill="#7d35ff"/>
-    <text class="vd-ui" x="353" y="334" text-anchor="middle">Start ▶</text>
+    <rect class="vd-pill" x="76" y="256" width="350" height="118" rx="11"/>
+    <text class="vd-ui" x="92" y="278" fill="#63eaff">BIOLOGY · 45 MIN PLAN</text>
+    <text class="vd-a" x="92" y="298">01 · Read: structure of a leaf — 10 min</text>
+    <text class="vd-a" x="92" y="316">02 · Draw and label the diagram — 12 min</text>
+    <text class="vd-a" x="92" y="334">03 · Practise 5 CSEE questions — 15 min</text>
+    <rect x="92" y="344" width="180" height="22" rx="7" fill="#172653" stroke="#1a4f77"/><text class="vd-btn" x="182" y="359" text-anchor="middle">Save this study plan to Shelf</text>
+    <rect x="280" y="344" width="64" height="22" rx="7" fill="url(#vdBtn)"/><text class="vd-btn" x="312" y="359" text-anchor="middle" fill="#fff">Start ▶</text>
   </g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6143;.625;1"/>
-    <rect x="80" y="362" width="360" height="36" rx="18" fill="#17663f"/>
-    <text class="vd-ui" x="260" y="385" text-anchor="middle">Study plan saved to your Study Shelf ✓</text>
+    <rect x="76" y="384" width="350" height="30" rx="15" fill="#17663f"/>
+    <text class="vd-ui" x="251" y="403" text-anchor="middle">Study plan saved to your Study Shelf ✓</text>
   </g>
-  <text class="vd-uism" x="80" y="424"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6429;.6536;1"/>Print it or download as Markdown · works offline once installed</text>
+  <text class="vd-uism" x="76" y="436"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6429;.6536;1"/>Start opens the workspace and begins timing the session</text>
 
   <text class="vd-step" x="496" y="146">3 · Plan it, save it, track it</text>
-  <rect class="vd-card" x="496" y="164" width="406" height="196" rx="16"/>
-  <text class="vd-ui" x="518" y="192">STUDY SHELF</text>
+  <rect class="vd-card" x="496" y="164" width="406" height="232" rx="16"/>
+  <text class="vd-eb" x="518" y="188">YOUR STUDY SHELF</text>
+  <text class="vd-ui" x="518" y="206" font-size="14">Saved study sessions</text>
+  <g><rect x="846" y="176" width="34" height="34" rx="10" fill="#0d2136" stroke="#1b769c"/><text class="vd-ui" x="863" y="198" text-anchor="middle" fill="#63eaff">1<animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="1;1;0;0" keyTimes="0;.61;.62;1"/></text><text class="vd-ui" x="863" y="198" text-anchor="middle" fill="#63eaff" opacity="0">2<animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6143;.625;1"/></text></g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.6214;.6321;1"/>
-    <rect class="vd-pill" x="518" y="206" width="362" height="60" rx="12"/>
-    <text class="vd-body" x="536" y="230">Biology — Photosynthesis</text>
-    <text class="vd-uism" x="536" y="250" fill="#27e9ff"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.6214;.6321;.7;.7107;1"/>In progress</text>
-    <text class="vd-uism" x="536" y="250" fill="#3ddc97"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7;.7107;1"/>Completed</text>
-    <text class="vd-ui" x="862" y="240" text-anchor="end" fill="#27e9ff"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.6214;.6321;.6643;.675;1"/>0:05</text>
-    <text class="vd-ui" x="862" y="240" text-anchor="end" fill="#27e9ff"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.6643;.675;.7;.7107;1"/>0:18</text>
-    <text class="vd-ui" x="862" y="240" text-anchor="end" fill="#3ddc97"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7;.7107;1"/>0:31</text>
+    <rect class="vd-pill" x="518" y="218" width="362" height="78" rx="12"/>
+    <rect x="530" y="230" width="24" height="24" rx="7" fill="#0b2237" stroke="#276789"/><text x="542" y="247" font-size="11" fill="#63eaff" text-anchor="middle">✦</text>
+    <text class="vd-body" x="564" y="242">Biology — Photosynthesis</text>
+    <text class="vd-uism" x="564" y="257">O-Level · 45 min plan</text>
+    <text class="vd-uism" x="564" y="272" fill="#63eaff"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.6214;.6321;.7;.7107;1"/>Total studied: 0:05</text>
+    <text class="vd-uism" x="564" y="272" fill="#63eaff" opacity="0">Total studied: 0:31<animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7;.7107;1"/></text>
+    <rect x="760" y="230" width="104" height="17" rx="8" fill="#0f2b1e" stroke="#2c7a52"/><text class="vd-btn" x="812" y="242" text-anchor="middle" fill="#7ee2ae"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1;0;0" keyTimes="0;.6214;.6321;.7;.7107;1"/>In progress</text>
+    <rect x="760" y="230" width="104" height="17" rx="8" fill="#0f2b1e" stroke="#2c7a52" opacity="0"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7;.7107;1"/></rect>
+    <text class="vd-btn" x="812" y="242" text-anchor="middle" fill="#7ee2ae" opacity="0">Completed<animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7;.7107;1"/></text>
+    <rect x="760" y="256" width="104" height="20" rx="7" fill="#0b1d30" stroke="#285776"/><text class="vd-btn" x="812" y="270" text-anchor="middle" fill="#a9f3ff">Study again →</text>
   </g>
   <g><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.65;.6607;1"/>
-    <rect class="vd-pill" x="518" y="276" width="362" height="60" rx="12"/>
-    <text class="vd-body" x="536" y="300">Basic Mathematics — Algebra</text>
-    <text class="vd-uism" x="536" y="320">Ready</text>
-    <text class="vd-ui" x="862" y="310" text-anchor="end" fill="#8fa8bd">Study again</text>
+    <rect class="vd-pill" x="518" y="304" width="362" height="78" rx="12"/>
+    <rect x="530" y="316" width="24" height="24" rx="7" fill="#0b2237" stroke="#276789"/><text x="542" y="333" font-size="11" fill="#63eaff" text-anchor="middle">✦</text>
+    <text class="vd-body" x="564" y="328">Basic Mathematics — Algebra</text>
+    <text class="vd-uism" x="564" y="343">O-Level · 30 min plan</text>
+    <text class="vd-uism" x="564" y="358" fill="#63eaff">Total studied: 0:00</text>
+    <rect x="760" y="316" width="104" height="17" rx="8" fill="#0d2136" stroke="#285776"/><text class="vd-btn" x="812" y="328" text-anchor="middle" fill="#8fa8bd">Ready</text>
+    <rect x="760" y="342" width="104" height="20" rx="7" fill="#0b1d30" stroke="#285776"/><text class="vd-btn" x="812" y="356" text-anchor="middle" fill="#a9f3ff">Study again →</text>
   </g>
-  <text class="vd-body" x="496" y="392"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7143;.725;1"/>Finishing a session writes the minutes to the dashboard:</text>
-  <text class="vd-body" x="496" y="414"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7214;.7321;1"/>study time this week, current streak, curriculum progress.</text>
+  <text class="vd-body" x="496" y="418"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7143;.725;1"/>Finishing a session writes the minutes to the dashboard:</text>
+  <text class="vd-body" x="496" y="440"><animate attributeName="opacity" dur="28s" repeatCount="indefinite" values="0;0;1;1" keyTimes="0;.7214;.7321;1"/>study time this week, current streak, curriculum progress.</text>
 </g>
 
 <!-- ================= STEP 4 · shape-shifts to the device ================= -->

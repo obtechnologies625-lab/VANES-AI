@@ -20,3 +20,6 @@ schema.sql
 wrangler.toml
 vercel.json
 .assetsignore
+
+# 365 KB README-only poster; GitHub serves it, the Worker has no reason to.
+assets/ob-tech-labs-brand.jpg

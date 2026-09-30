@@ -1,1 +1,24 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc"><title id="title">VANES AI six turbine cyberpunk wheel</title><desc id="desc">A precise six-turbine neon cyberpunk wheel emblem for VANES AI</desc><defs><radialGradient id="bg"><stop stop-color="#101a3a"/><stop offset=".72" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient><linearGradient id="blade" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaffff"/><stop offset=".28" stop-color="#27e9ff"/><stop offset=".66" stop-color="#7654ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient><linearGradient id="rim" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#00eaff"/><stop offset=".5" stop-color="#7c4dff"/><stop offset="1" stop-color="#ff3ad7"/></linearGradient><filter id="glow" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs><rect width="256" height="256" rx="58" fill="url(#bg)"/><g transform="translate(128 128)" filter="url(#glow)"><circle r="103" fill="none" stroke="#00eaff" stroke-width="2" opacity=".35" stroke-dasharray="2 9"/><circle r="94" fill="none" stroke="url(#rim)" stroke-width="4" opacity=".95"/><circle r="84" fill="none" stroke="#bffcff" stroke-width="1.5" opacity=".65" stroke-dasharray="7 6"/><g fill="url(#blade)" stroke="#d9fbff" stroke-width="1.5"><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z"/><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z" transform="rotate(60)"/><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z" transform="rotate(120)"/><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z" transform="rotate(180)"/><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z" transform="rotate(240)"/><path d="M-9-20C-45-61-37-82 1-91c24 26 25 56 9 82-6 7-12 9-19 9Z" transform="rotate(300)"/></g><circle r="31" fill="#070d20" stroke="url(#rim)" stroke-width="5"/><circle r="17" fill="#101936" stroke="#d7fbff" stroke-width="2"/><circle r="7" fill="url(#blade)"/><g fill="#d9fbff"><circle cx="0" cy="-106" r="2.5"/><circle cx="106" cy="0" r="2.5"/><circle cx="0" cy="106" r="2.5"/><circle cx="-106" cy="0" r="2.5"/></g></g></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="t d">
+<title id="t">VANES AI six turbine wheel</title>
+<desc id="d">A bold six-blade turbine wheel in cyan to magenta neon on a dark rounded square.</desc>
+<defs>
+  <radialGradient id="b" cx=".5" cy=".42" r=".9"><stop stop-color="#101a3a"/><stop offset=".7" stop-color="#050916"/><stop offset="1" stop-color="#02040c"/></radialGradient>
+  <linearGradient id="n" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#eaffff"/><stop offset=".28" stop-color="#27e9ff"/><stop offset=".66" stop-color="#7654ff"/><stop offset="1" stop-color="#ff2bd6"/></linearGradient>
+  <filter id="g" x="-60%" y="-60%" width="220%" height="220%"><feGaussianBlur stdDeviation="4" result="x"/><feMerge><feMergeNode in="x"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+</defs>
+<rect width="256" height="256" rx="56" fill="url(#b)"/>
+<g transform="translate(128 128) scale(.5)" filter="url(#g)">
+  <circle r="206" fill="none" stroke="url(#n)" stroke-width="16"/>
+  <g fill="url(#n)" stroke="#eaffff" stroke-width="7">
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z"/>
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(60)"/>
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(120)"/>
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(180)"/>
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(240)"/>
+    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(300)"/>
+  </g>
+  <circle r="74" fill="#070d20" stroke="url(#n)" stroke-width="16"/>
+  <circle r="42" fill="#101936" stroke="#d7fbff" stroke-width="6"/>
+  <circle r="19" fill="url(#n)"/>
+</g>
+</svg>
