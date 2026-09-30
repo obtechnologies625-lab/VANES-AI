@@ -50,9 +50,11 @@ function planSubmit(e){
       let plans=[];try{plans=JSON.parse(localStorage.getItem(PLANS_KEY)||'[]')}catch(_){plans=[]}
       plans.unshift({id:crypto.randomUUID?.()||String(Date.now()),subject:raw,goal,time:minutes,createdAt:new Date().toISOString()});
       localStorage.setItem(PLANS_KEY,JSON.stringify(plans.slice(0,50)));
+      window.VANES_SAVE_PLAN_SESSION?.({subject:title,goal:goal,time:minutes});
       result.querySelector('#saveGeneratedPlan').textContent='✓ Saved';
     };
     result.querySelector('#startGeneratedPlan').onclick=()=>{
+      if(window.VANES_START_PLAN_SESSION){window.VANES_START_PLAN_SESSION({subject:title,goal:goal,time:minutes});return}
       const topicMap=document.querySelector('#topicMap');
       const workspace=document.querySelector('#workspace');
       if(workspace&&topicMap){
