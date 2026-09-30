@@ -10,6 +10,29 @@
 
 ![OB Tech-Labs cyberpunk brain](assets/ob-tech-labs-brain.svg)
 
+## ▶️ Watch how VANES works
+
+![Animated walkthrough: ask one question per line, get each answered separately, plan and save a session, and see the layout adapt to phone, tablet and desktop](assets/vanes-demo.svg)
+
+A 28-second animated tour of the four things a learner actually does:
+
+| Step | What happens |
+| --- | --- |
+| **1 · Ask** | Type in the AI study coach. One question per line — or a numbered list — and VANES reads them as separate requests. English or Kiswahili, up to 6 questions per message. |
+| **2 · Get each answer** | Questions are answered one at a time in order, with a live answer queue. Each turn keeps the previous questions as context, so “now in Kiswahili” still refers to the right topic. **Clear** wipes the conversation (press it twice to confirm). |
+| **3 · Plan and track** | Generate a study plan, save it to the Study Shelf or start it. The session timer runs, and completing it writes the minutes to the dashboard. |
+| **4 · Any device** | The same app reshapes itself: sidebar → menu drawer, and the coach chat moves above the guide on narrow screens. |
+
+> This is an animated SVG illustration, not a screen recording — it lives in the repository as `assets/vanes-demo.svg`, so it needs no video hosting and plays on GitHub. To record a real clip instead, open the production URL below and capture the same four steps; nothing in the app has to change.
+
+## ⬇️ Get VANES
+
+**[🚀 Open VANES AI now →](https://vanes-ai.obtechnologies625.workers.dev/)** &nbsp;·&nbsp; **[📦 Download the app (ZIP)](https://github.com/obtechnologies625-lab/VANES-AI/archive/refs/heads/main.zip)** &nbsp;·&nbsp; **[🧰 View the source](https://github.com/obtechnologies625-lab/VANES-AI)**
+
+- **Just use it** — open the link on a phone, tablet or PC. Nothing to install, no Command Prompt, Python, Node.js or local server.
+- **Install it as an app** — browser menu → *Add to Home screen* / *Install app*, or the **⬇ Install VANES AI** button at the bottom of the sidebar (it hides itself once installed). The shell, saved plans and Study Shelf then open with no connection; an offline banner explains that AI answers still need the internet.
+- **Download the ZIP** — the whole app is plain static files. Unzip anywhere and open `index.html`, or serve the folder (see [Run it locally](#-run-it-locally)). AI features call the production Worker, so they work from any copy as long as the device is online.
+
 ## 🚀 Use VANES online
 
 The production app is deployed as a **Cloudflare Worker**:
@@ -17,8 +40,6 @@ The production app is deployed as a **Cloudflare Worker**:
 **https://vanes-ai.obtechnologies625.workers.dev**
 
 Students can open the app directly from a phone, tablet, or PC. No Command Prompt, Python, Node.js, or local server is required for normal use.
-
-VANES is also an **installable PWA**. On a phone use the browser menu → *Add to Home screen*; in the app itself an **⬇ Install VANES AI** button appears at the bottom of the sidebar on browsers that support the install prompt (it hides automatically once the app is already installed). The app shell is cached by a service worker, so the interface, saved plans and study shelf still open with no connection — an offline banner explains that AI answers need the internet.
 
 ## 🎓 Personal learner profile
 
@@ -37,10 +58,25 @@ Supported common Advanced combinations include **PCM, PCB, PGM, CBG, CBA, CBN, E
 ## 🧠 AI Study Coach
 
 - Chat, practise, analyse, mark, summarise and plan in a full-height coach workspace
+- **Ask several questions at once.** Put each question on its own line — or write `1.` `2.` `3.`, or separate them with `?` — and VANES splits them and answers each one in its own turn, in order, with an on-screen queue showing which question it is on. Up to 6 per message; anything beyond that is reported rather than silently dropped. Each turn carries the previous questions as context, so a short follow-up line like *“in Kiswahili”* is attached to the question before it instead of being treated as a question of its own. **Enter** sends, **Shift+Enter** makes a new line, and the input box grows as you type.
+- **Clear** empties the current conversation. It needs two presses (the button arms for 3.5 seconds) so a mis-tap cannot delete a revision session.
 - **Multiple saved conversations.** Start a new chat or reopen an earlier one from the **☰ History** list; up to 30 conversations are kept on the device, each titled from its first question, and the last 12 messages of the open conversation are sent as context
-- **Upload study images for analysis.** Messages containing an image are routed to Mistral's vision model (`pixtral-12b-2409` by default); plain text stays on the chat model
-- Generate educational images (returned as self-contained, safety-checked SVG) when the image service is available
+- **Upload study images for analysis.** Messages containing an image are routed to Mistral's vision model (`pixtral-12b-2409` by default); plain text stays on the chat model. In a multi-question message the image is attached to the first question only
+- Generate educational images (returned as self-contained, safety-checked SVG) when the image service is available — start a message with **✧**
 - Continue working from subject topic maps
+
+## 📱 Adapts to the device in use
+
+One code base, four shapes. Nothing is served differently per device — the layout reflows:
+
+| Screen | What changes |
+| --- | --- |
+| **Phone (≤430px)** | Sidebar becomes a slide-in drawer behind a tap-to-close backdrop, opened by the **☰** button in the phone header. The coach chat moves **above** the guide so the conversation is the first thing on screen, and the input row compacts so the text box stays usable. |
+| **Large phone / small tablet (431–760px)** | Same drawer layout; the coach header wraps onto its own row with three equal buttons. |
+| **Tablet (761–1024px)** | The sidebar returns as a permanent column, the phone header hides, and the coach goes back to two columns. |
+| **Desktop (≥1024px)** | Full sidebar, full-height coach workspace with the guide beside the chat. |
+
+Tested with no horizontal scrolling at 320, 360, 390, 414, 650, 768, 900, 1024, 1280 and 1440px. Back/forward navigation follows the current view through the URL hash, so a bookmarked or shared `#coach` link opens straight on the coach.
 
 ## 📚 Study plans, Study Shelf and tracked sessions
 
@@ -144,8 +180,9 @@ When you change a cached file, bump its `?v=` cache-buster in `index.html`, and 
 | `index.html`, `styles.css`, `vanes-*.css` | App shell and styling |
 | `vanes-runtime.js`, `vanes-study-system.js`, `full-chat.js` | Core app: views, planner/shelf/sessions, AI coach and conversations |
 | `vanes-profile.js`, `vanes-product-upgrade.js`, `vanes-settings.js`, `vanes-donate.js`, `vanes-notifications.js`, `vanes-mobile.js` | Feature modules |
-| `vanes-brand.js`, `vanes-send-fix.js`, `vanes-ai-context-fix.js`, `vanes-functional-fix-v2.js`, `vanes-profile-enforcer.js` | Patch layers loaded after the modules above |
+| `vanes-brand.js`, `vanes-send-fix.js`, `vanes-ai-context-fix.js`, `vanes-profile-enforcer.js` | Patch layers loaded after the modules above |
 | `vanes-pwa.js`, `sw.js`, `manifest.webmanifest`, `assets/icon-*.png` | Install prompt, offline banner, service worker and icons |
+| `assets/vanes-demo.svg` | The animated walkthrough shown at the top of this README |
 | `src/` | Cloudflare Worker: `index.js` (routes), `contact.js`, `analytics.js`, `admin-page.js` (the token-gated admin dashboard) |
 | `functions/api/chat.js`, `api/chat.js` | Cloudflare Pages and Vercel fallbacks |
 | `wrangler.toml`, `.assetsignore`, `vercel.json` | Deploy configuration |

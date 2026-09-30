@@ -51,6 +51,7 @@ function planSubmit(e){
       plans.unshift({id:crypto.randomUUID?.()||String(Date.now()),subject:raw,goal,time:minutes,createdAt:new Date().toISOString()});
       localStorage.setItem(PLANS_KEY,JSON.stringify(plans.slice(0,50)));
       window.VANES_SAVE_PLAN_SESSION?.({subject:title,goal:goal,time:minutes});
+      window.dispatchEvent(new CustomEvent('vanes:shelf-updated'));
       result.querySelector('#saveGeneratedPlan').textContent='✓ Saved';
     };
     result.querySelector('#startGeneratedPlan').onclick=()=>{
@@ -75,10 +76,4 @@ function escapeHtml(s){return String(s).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':
 // Capture the actual form submission; the previous planner fix listened for a button id
 // that the HTML did not have, so clicking "Create my plan" did nothing.
 document.addEventListener('submit',planSubmit,true);
-
-// Make ordinary action buttons keyboard/click friendly without changing their existing handlers.
-document.addEventListener('click',function(e){
-  const b=e.target.closest?.('#uploadButton,#generateButton,#settingsNotifyButton,#donateButton,#familyButton,#fieldButton,#feedbackButton,#saveAiSettings,#settingsEditProfile,#settingsOpenProfile,#settingsOpenNotifications,#clearLocalData');
-  if(b) b.setAttribute('data-vanes-action-ready','true');
-},true);
 })();

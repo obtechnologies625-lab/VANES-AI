@@ -10,7 +10,16 @@ function complete(p){
  if(p.level==='A-Level')return COMBOS.includes(p.combination)&&((p.combination==='OTHER'&&Array.isArray(p.subjects)&&p.subjects.length>0)||p.combination!=='OTHER');
  return Array.isArray(p.subjects)&&p.subjects.length>0;
 }
+/* The first-run dialog in vanes-profile.js collects the same fields; if it is on screen the
+   guard must stay quiet, otherwise the learner gets two stacked forms for one profile. */
+function firstRunOpen(){
+ const m=document.getElementById('nameModal');
+ if(!m||m.getAttribute('aria-hidden')==='true')return false;
+ const r=m.getBoundingClientRect();
+ return r.width>0&&r.height>0;
+}
 function enforce(){
+ if(firstRunOpen())return false;
  const p=read(),modal=document.getElementById('vanesProfileUpgrade');
  if(!modal)return false;
  if(!complete(p)){
@@ -25,8 +34,9 @@ function enforce(){
 }
 function boot(){
  let tries=0;
- const timer=setInterval(()=>{tries++;if(enforce()||tries>40)clearInterval(timer)},100);
+ const timer=setInterval(()=>{if(firstRunOpen())return;if(enforce()||++tries>40)clearInterval(timer)},100);
  window.addEventListener('hashchange',()=>setTimeout(enforce,100));
+ window.addEventListener('vanes:profile-saved',()=>setTimeout(enforce,150));
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

@@ -9,6 +9,9 @@ main:before{content:"";display:block;height:96px;margin:0 0 12px;border:1px soli
 
 /* Responsive mobile shell: compact drawer navigation, no horizontal overflow, touch-friendly controls. */
 .vanes-sidebar-backdrop{display:none}
+/* The phone header (brand + drawer button) only belongs to the drawer layout; without this it
+   renders as a stray second brand bar on tablets and desktops, where the sidebar is already visible. */
+.mobile-header{display:none}
 @media(max-width:760px){
   html,body{width:100%;max-width:100%;overflow-x:hidden}
   .app-shell{display:block;min-height:100vh}

@@ -201,3 +201,45 @@
 .vanes-convo-delete:hover{border-color:#ff5d7a;color:#ff8fa5;background:rgba(255,93,122,.12)}
 .vanes-convo-empty{margin:0;padding:6px 2px;color:#7f97ad;font-size:11px}
 @media(max-width:760px){.vanes-chat-title{display:none}.vanes-convo-list{max-height:190px}}
+
+/* ── Ask VANES coach panel: header, multi-question queue and growing textarea ── */
+.vanes-ask-head{flex-wrap:wrap;row-gap:8px}
+.vanes-ask-id{display:flex;align-items:center;gap:9px;min-width:0;flex:1}
+.vanes-ask-icon{display:grid;place-items:center;width:32px;height:32px;flex:0 0 32px;border-radius:10px;border:1px solid #2a6ea8;background:radial-gradient(circle at 30% 25%,#123a63,#071324);color:#7fe9ff;font-size:15px;box-shadow:0 0 14px rgba(0,207,255,.22)}
+.vanes-ask-copy{min-width:0;display:grid;gap:2px}
+.vanes-ask-copy strong{color:#f4fbff;font-size:13px;letter-spacing:.4px;line-height:1.2}
+.vanes-ask-copy small{display:block;color:#8fb2cc;font-size:10.5px;line-height:1.35;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#coach .vanes-chat-title{display:inline;margin:0;max-width:none;color:#8fb2cc;font-size:10.5px;font-weight:600;overflow:visible}
+.vanes-ask-dot{color:#3f6b8c}
+.vanes-ask-actions{display:flex;align-items:center;gap:6px;margin-left:auto;flex-wrap:wrap}
+.vanes-ask-actions .vanes-chat-title{display:none}
+.vanes-clear-btn{border-color:#4a3358;color:#e6b8ff}
+.vanes-clear-btn:hover{border-color:#c77dff;color:#fff;box-shadow:0 0 12px rgba(199,125,255,.28)}
+.vanes-clear-btn.armed{border-color:#ff6b6b;background:#3a1220;color:#ffd7d7;animation:vanes-arm-pulse 1.1s ease-in-out infinite}
+@keyframes vanes-arm-pulse{0%,100%{box-shadow:0 0 0 rgba(255,107,107,0)}50%{box-shadow:0 0 14px rgba(255,107,107,.5)}}
+#coach #chatForm{align-items:flex-end}
+#coach #chatInput{display:block;width:100%;resize:none;overflow-y:auto;line-height:1.45;font:500 14px/1.45 "DM Sans",Arial,sans-serif;scrollbar-width:thin}
+.vanes-ask-queue{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 11px;border-top:1px solid #123c5e;background:rgba(6,16,27,.92)}
+.vanes-queue-label{color:#8edff2;font-size:10.5px;font-weight:700;letter-spacing:.3px;margin-right:2px}
+.vanes-queue-chip{display:inline-flex;align-items:center;gap:5px;max-width:230px;padding:4px 9px;border:1px solid #1d4b6b;border-radius:999px;background:#08192b;color:#9fc3da;font-size:10.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;transition:.2s}
+.vanes-queue-chip b{display:grid;place-items:center;width:15px;height:15px;flex:0 0 15px;border-radius:50%;background:#12314a;color:#cdeeff;font-size:9px}
+.vanes-queue-chip[data-state="asking"]{border-color:#00cfff;color:#eaf7ff;box-shadow:0 0 12px rgba(0,207,255,.28)}
+.vanes-queue-chip[data-state="asking"] b{background:#00cfff;color:#04121f}
+.vanes-queue-chip[data-state="done"]{border-color:#1f7a4d;color:#b7f5d3}
+.vanes-queue-chip[data-state="done"] b{background:#1f7a4d;color:#eafff3}
+.vanes-queue-chip[data-state="failed"]{border-color:#8c2f3f;color:#ffc9d2}
+.vanes-queue-chip[data-state="failed"] b{background:#8c2f3f;color:#fff}
+@media(max-width:760px){
+  #coach .vanes-chat-title{display:inline}
+  .vanes-ask-head{padding:8px 9px}
+  .vanes-ask-icon{width:28px;height:28px;flex-basis:28px;font-size:13px}
+  .vanes-ask-actions{width:100%;margin-left:0;justify-content:space-between}
+  .vanes-ask-actions .vanes-chat-btn{flex:1;justify-content:center;padding:8px 6px;font-size:11px}
+  .vanes-queue-chip{max-width:150px}
+}
+
+/* Off state for the injected settings switches (vanes-settings.js styles .ios-switch as always-on green). */
+#settings .ios-switch.vanes-switch-off{background:#3b4a5a;color:#d7e3ee}
+
+/* The Study Shelf now has its own panel under the planner grid instead of overwriting #planResult. */
+.planner-layout #vanesStudyShelf{grid-column:1/-1}
