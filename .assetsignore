@@ -17,7 +17,6 @@ docs/
 google-apps-script/
 DATABASE_SETUP.md
 schema.sql
-admin-analytics.html
 wrangler.toml
 vercel.json
 .assetsignore

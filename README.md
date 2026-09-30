@@ -112,6 +112,18 @@ Worker variables and secrets (`src/index.js`):
 
 Learner profiles, saved plans, the Study Shelf, chat conversations and study activity are stored in the browser's `localStorage` on the learner's own device. Analytics events use an anonymous browser identifier; question and answer text is only included if the learner explicitly enables the anonymised-learning-data option in Settings. Names, phone numbers and payment credentials are not part of the analytics payload.
 
+## 📈 Analytics and the admin dashboard
+
+Clients POST anonymous events (profile saved, plan started, session completed, rating) to `/api/analytics`. Storage needs a **D1 database** bound as `DB`; until that binding exists the endpoint answers `503` with a readable JSON reason and the event is discarded — the app is unaffected.
+
+Reading the data back goes through `/api/admin/analytics`, which requires `Authorization: Bearer <ADMIN_ANALYTICS_TOKEN>`. The dashboard that renders it is produced by the Worker, not shipped as a file, and is only served when the token is presented in the URL:
+
+```
+https://vanes-ai.obtechnologies625.workers.dev/admin-analytics.html?key=YOUR_TOKEN
+```
+
+A wrong or missing `key` returns a plain `404`, so the dashboard is not discoverable by crawling. Full setup steps — creating the database, where the binding must live, and the two ways it silently fails — are in [DATABASE_SETUP.md](DATABASE_SETUP.md).
+
 ## 💻 Run it locally
 
 The app is plain static files — serve the repository root with any static server:
@@ -134,10 +146,10 @@ When you change a cached file, bump its `?v=` cache-buster in `index.html`, and 
 | `vanes-profile.js`, `vanes-product-upgrade.js`, `vanes-settings.js`, `vanes-donate.js`, `vanes-notifications.js`, `vanes-mobile.js` | Feature modules |
 | `vanes-brand.js`, `vanes-send-fix.js`, `vanes-ai-context-fix.js`, `vanes-functional-fix-v2.js`, `vanes-profile-enforcer.js` | Patch layers loaded after the modules above |
 | `vanes-pwa.js`, `sw.js`, `manifest.webmanifest`, `assets/icon-*.png` | Install prompt, offline banner, service worker and icons |
-| `src/` | Cloudflare Worker: `index.js` (routes), `contact.js`, `analytics.js` |
+| `src/` | Cloudflare Worker: `index.js` (routes), `contact.js`, `analytics.js`, `admin-page.js` (the token-gated admin dashboard) |
 | `functions/api/chat.js`, `api/chat.js` | Cloudflare Pages and Vercel fallbacks |
 | `wrangler.toml`, `.assetsignore`, `vercel.json` | Deploy configuration |
-| `docs/`, `google-apps-script/`, `schema.sql`, `admin-analytics.html` | Supporting material and the private analytics dashboard |
+| `docs/`, `google-apps-script/`, `schema.sql`, `DATABASE_SETUP.md` | Supporting material and database setup |
 
 > **Patch layers matter.** `vanes-send-fix.js` listens for `submit` in the capture phase and calls `stopImmediatePropagation()`, so a `submit` handler bound to `#planForm` anywhere else never fires. New planner behaviour belongs inside that file, or behind a `window.VANES_*` hook it calls (the pattern used by `VANES_EXPORT`, `VANES_SAVE_PLAN_SESSION` and `VANES_START_PLAN_SESSION`).
 
@@ -148,10 +160,10 @@ Pushing to `main` runs three workflows:
 | Workflow | What it does |
 | --- | --- |
 | **Deploy VANES AI to Cloudflare Workers** | Production. `wrangler deploy` of `src/index.js` with the repo root as static assets. Needs the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets; without them the deploy step is **skipped but the run still reports success**, so always confirm the `Deploy Worker` step conclusion. |
-| **Deploy VANES AI** | Publishes the same files to GitHub Pages. Pages has no Worker, so `/api/*` routes do not exist there — it is a mirror, not the production target. |
+| **Deploy VANES AI** | Publishes the repository to GitHub Pages. Pages has no Worker, so `/api/*` routes do not exist there — it is a mirror, not the production target. It uploads the **entire** repository and ignores `.assetsignore`, so it currently serves `src/index.js`, `wrangler.toml` and `schema.sql` publicly; Pages is being retired for that reason. |
 | **Node.js CI** | `node --check` on every JavaScript file under Node 20, 22 and 24. There is no test suite. |
 
-Because static assets are the repository root, `.assetsignore` decides what is *not* published. Anything that must stay private — `src/`, `.github/`, `schema.sql`, `wrangler.toml`, `admin-analytics.html` — belongs there. Wrangler 4 has no `exclude` key under `[assets]`; adding one is silently ignored and would publish those files (and can also break the 25 MiB asset limit).
+Because static assets are the repository root, `.assetsignore` decides what the *Worker* does not publish. Anything that must stay off the Worker — `src/`, `.github/`, `schema.sql`, `wrangler.toml` — belongs there. Wrangler 4 has no `exclude` key under `[assets]`; adding one is silently ignored and would publish those files (and can also break the 25 MiB asset limit). Note that `.assetsignore` has **no effect on the GitHub Pages deploy**, which uploads everything.
 
 Verify a deploy:
 
@@ -162,9 +174,9 @@ curl -s https://vanes-ai.obtechnologies625.workers.dev/sw.js | grep "const CACHE
 
 ## 🧰 Known issues
 
-- **Analytics are not stored.** The Worker has no `DB` (D1) binding, so every `/api/analytics` POST returns `503` and ratings are silently dropped. The error responses also omit CORS headers, so on a cross-origin deploy the browser reports a CORS failure instead of the real reason. Setup steps are in [DATABASE_SETUP.md](DATABASE_SETUP.md).
-- **`/api/health` reports a stale `imageModel`.** Image *chat* routing uses `visionModel` (correct); the `imageModel` field only describes SVG generation.
-- **`admin-analytics.html` is not reachable on the Worker** because it is listed in `.assetsignore`, even though `DATABASE_SETUP.md` points at `/admin-analytics.html`.
+- **Analytics are not stored yet.** The Worker has no `DB` (D1) binding, so every `/api/analytics` POST returns `503` and ratings are discarded. Error responses now carry CORS headers, so the browser shows the real reason instead of a CORS failure. Binding the database is a dashboard + one-line `wrangler.toml` change: [DATABASE_SETUP.md](DATABASE_SETUP.md).
+- **GitHub Pages publishes the Worker source.** `.assetsignore` does not apply to the Pages artifact, so `src/index.js`, `wrangler.toml` and `schema.sql` are publicly readable at `https://obtechnologies625-lab.github.io/VANES-AI/`. No secrets are exposed (API keys are Worker secrets), but Pages is a redundant mirror and should be switched off.
+- **No test suite.** `node --check` catches syntax errors only; the Worker's runtime behaviour is unverified by CI.
 
 ## 👨‍💻 Made by OB Technologies Lab
 
