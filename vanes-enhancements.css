@@ -181,3 +181,23 @@
 
 #subjects .topic-preview{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0}
 #subjects .topic-preview span{padding:5px 8px;border:1px solid #1b5276;border-radius:999px;background:#071a2b;color:#8edff2;font-size:9px;font-weight:700}
+
+/* Chat conversation history */
+.vanes-chat-bar{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid #123c5e;background:linear-gradient(180deg,rgba(8,21,38,.95),rgba(5,11,22,.9))}
+.vanes-chat-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 10px;border:1px solid #1b5276;border-radius:8px;background:#071a2b;color:#8edff2;font:700 11px/1 "DM Sans",Arial,sans-serif;cursor:pointer;transition:.16s;white-space:nowrap}
+.vanes-chat-btn:hover{border-color:#00cfff;color:#eaf7ff;box-shadow:0 0 12px rgba(0,207,255,.22)}
+.vanes-convo-count{min-width:15px;padding:1px 4px;border-radius:999px;background:#171c3d;color:#9be8ff;font-size:9px;text-align:center}
+.vanes-convo-count:empty{display:none}
+.vanes-chat-title{margin-left:auto;max-width:44%;color:#a9bfd3;font-size:11px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vanes-convo-list{display:flex;flex-direction:column;gap:5px;max-height:230px;overflow:auto;padding:9px 11px;border-bottom:1px solid #123c5e;background:#060f1d}
+.vanes-convo-list[hidden]{display:none}
+.vanes-convo{display:flex;align-items:center;gap:8px;padding:8px 10px;border:1px solid #123049;border-radius:9px;background:#081526;cursor:pointer;transition:.16s}
+.vanes-convo:hover{border-color:#1b5276;background:#0a1c31}
+.vanes-convo.active{border-color:#00cfff;background:linear-gradient(100deg,#12233f,#1a1440)}
+.vanes-convo-copy{flex:1;min-width:0}
+.vanes-convo-copy strong{display:block;color:#eaf7ff;font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vanes-convo-copy small{display:block;margin-top:2px;color:#7f97ad;font-size:10px}
+.vanes-convo-delete{flex:none;width:24px;height:24px;border:1px solid transparent;border-radius:7px;background:none;color:#7f97ad;font-size:11px;cursor:pointer}
+.vanes-convo-delete:hover{border-color:#ff5d7a;color:#ff8fa5;background:rgba(255,93,122,.12)}
+.vanes-convo-empty{margin:0;padding:6px 2px;color:#7f97ad;font-size:11px}
+@media(max-width:760px){.vanes-chat-title{display:none}.vanes-convo-list{max-height:190px}}

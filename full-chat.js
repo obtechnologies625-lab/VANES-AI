@@ -2,15 +2,40 @@
 (function(){
 'use strict';
 const API='https://vanes-ai.obtechnologies625.workers.dev/api/chat',IMAGE_API='https://vanes-ai.obtechnologies625.workers.dev/api/image';
-const MAX_IMAGE=8*1024*1024, MAX_HISTORY=40;
+const MAX_IMAGE=8*1024*1024, MAX_HISTORY=40, MAX_CONVOS=30,
+ CONVOS_KEY='vanes-chat-conversations-v1', ACTIVE_KEY='vanes-chat-active-v1', LEGACY_KEY='vanes-chat-clean-v1';
 function boot(){
  const panel=document.querySelector('#coach .chat-panel'),messages=document.querySelector('#messages'),form=document.querySelector('#chatForm'),input=document.querySelector('#chatInput'),upload=document.querySelector('#uploadButton'),generate=document.querySelector('#generateButton');
  if(!panel||!messages||!form||!input||panel.dataset.vanesCleanChat==='1')return;
  panel.dataset.vanesCleanChat='1';
- let history=readJSON('vanes-chat-clean-v1',[]);if(!Array.isArray(history))history=[];history=history.slice(-MAX_HISTORY);
+ let convos=[],activeId=null,history=[];
  let imageData='',busy=false,aborter=null;
+ let listEl=null,titleEl=null,countEl=null;
  function readJSON(k,f){try{const v=JSON.parse(localStorage.getItem(k)||'');return v??f}catch(_){return f}}
- function save(){try{localStorage.setItem('vanes-chat-clean-v1',JSON.stringify(history.slice(-MAX_HISTORY)))}catch(_){}}
+ function uid(){return crypto.randomUUID?.()||('c'+Date.now().toString(36)+Math.random().toString(36).slice(2,6))}
+ function clean(msgs){return (Array.isArray(msgs)?msgs:[]).filter(m=>m&&(m.role==='user'||m.role==='assistant')&&!m.pending).slice(-MAX_HISTORY)}
+ function titleFor(msgs){const first=msgs.find(m=>m.role==='user'&&typeof m.text==='string'&&m.text.trim());return first?first.text.replace(/\s+/g,' ').trim().slice(0,42):'New chat'}
+ function persist(){const c=convos.find(x=>x.id===activeId);if(!c)return;c.messages=history.slice(-MAX_HISTORY);c.title=titleFor(c.messages);c.updatedAt=Date.now();convos.sort((a,b)=>b.updatedAt-a.updatedAt);convos=convos.slice(0,MAX_CONVOS);try{localStorage.setItem(CONVOS_KEY,JSON.stringify(convos));localStorage.setItem(ACTIVE_KEY,activeId)}catch(_){/* Generated images are inline data URLs, so the store can hit its quota; keep the newest conversations rather than losing them all. */try{convos=convos.slice(0,5);localStorage.setItem(CONVOS_KEY,JSON.stringify(convos))}catch(_){}}}
+ function save(){persist();renderConvos()}
+ function newChat(){const c={id:uid(),title:'New chat',updatedAt:Date.now(),messages:[]};convos.unshift(c);activeId=c.id;history=c.messages;persist();renderConvos();render()}
+ function select(id){const c=convos.find(x=>x.id===id);if(!c)return;activeId=id;history=c.messages;try{localStorage.setItem(ACTIVE_KEY,id)}catch(_){}renderConvos();render()}
+ function remove(id){const i=convos.findIndex(x=>x.id===id);if(i<0)return;convos.splice(i,1);try{localStorage.setItem(CONVOS_KEY,JSON.stringify(convos))}catch(_){}if(activeId===id){activeId=null;convos.length?select(convos[0].id):newChat()}else renderConvos()}
+ function loadConvos(){
+  convos=readJSON(CONVOS_KEY,[]).filter(c=>c&&c.id).map(c=>({id:String(c.id),title:String(c.title||'New chat'),updatedAt:Number(c.updatedAt)||0,messages:clean(c.messages)}));
+  if(!convos.length){const legacy=clean(readJSON(LEGACY_KEY,[]));if(legacy.length)convos=[{id:uid(),title:titleFor(legacy),updatedAt:Date.now(),messages:legacy}]}
+  localStorage.removeItem(LEGACY_KEY);
+  activeId=localStorage.getItem(ACTIVE_KEY)||'';
+  if(!convos.some(c=>c.id===activeId))activeId=convos[0]?.id||null;
+  if(activeId)select(activeId);else newChat();
+  persist();renderConvos();
+ }
+ function ago(ts){const s=Math.max(0,Math.floor((Date.now()-Number(ts||0))/1000));if(s<60)return 'just now';const m=Math.floor(s/60);if(m<60)return m+'m ago';const h=Math.floor(m/60);if(h<24)return h+'h ago';const d=Math.floor(h/24);return d===1?'yesterday':d+'d ago'}
+ function renderConvos(){
+  if(titleEl)titleEl.textContent=convos.find(c=>c.id===activeId)?.title||'New chat';
+  if(countEl)countEl.textContent=convos.length?String(convos.length):'';
+  if(!listEl)return;
+  listEl.innerHTML=convos.length?convos.map(c=>'<div class="vanes-convo'+(c.id===activeId?' active':'')+'" data-convo="'+esc(c.id)+'"><div class="vanes-convo-copy"><strong>'+esc(c.title)+'</strong><small>'+esc(ago(c.updatedAt))+' · '+c.messages.length+' messages</small></div><button type="button" class="vanes-convo-delete" data-delete="'+esc(c.id)+'" aria-label="Delete conversation">✕</button></div>').join(''):'<p class="vanes-convo-empty">No saved conversations yet.</p>';
+ }
  function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  function md(v){
   let s=esc(v);
@@ -52,8 +77,8 @@ function boot(){
  async function send(){
   if(busy)return;const question=input.value.trim();if(!question&&!imageData)return;
   busy=true;input.disabled=true;status('VANES is thinking…');history.push({role:'user',text:question||'Please analyse this study image.'});const pending={role:'assistant',text:'',pending:true};history.push(pending);save();render();
-  const msgs=history.filter(m=>m.role==='user').slice(-12).map(m=>({role:'user',content:m.text}));
-  if(imageData)msgs[msgs.length-1].content=[{type:'text',text:question||'Analyse this study image carefully and explain what you find.'},{type:'image_url',image_url:{url:imageData}}];
+  const msgs=history.filter(m=>(m.role==='user'||m.role==='assistant')&&typeof m.text==='string'&&m.text.trim()&&!m.pending).slice(-12).map(m=>({role:m.role,content:m.text}));
+  if(imageData&&msgs.length)msgs[msgs.length-1].content=[{type:'text',text:question||'Analyse this study image carefully and explain what you find.'},{type:'image_url',image_url:{url:imageData}}];
   try{
    pending.text=await ask({model:'codestral-latest',messages:[{role:'system',content:systemPrompt()},...msgs],max_tokens:1400});
    pending.pending=false;input.value='';imageData='';const p=document.querySelector('#imagePreview');if(p){p.hidden=true;p.innerHTML=''}save();render();status('Ready');
@@ -61,6 +86,21 @@ function boot(){
   finally{busy=false;input.disabled=false;input.focus()}
  }
  function showImage(file){if(!file)return;if(file.size>MAX_IMAGE){alert('Please choose an image smaller than 8 MB.');return}const r=new FileReader();r.onload=()=>{imageData=String(r.result||'');const p=document.querySelector('#imagePreview');if(p){p.hidden=false;p.innerHTML='<img src="'+esc(imageData)+'" alt="Study image preview"><span>Image attached — send when ready.</span>'}};r.readAsDataURL(file)}
+ const bar=document.createElement('div');bar.className='vanes-chat-bar';
+ bar.innerHTML='<button type="button" class="vanes-chat-btn" id="vanesNewChat">＋ New chat</button><button type="button" class="vanes-chat-btn" id="vanesHistoryToggle" aria-expanded="false" aria-controls="vanesConvoList">☰ History <span id="vanesConvoCount" class="vanes-convo-count"></span></button><span class="vanes-chat-title" id="vanesChatTitle"></span>';
+ panel.insertBefore(bar,messages);
+ listEl=document.createElement('div');listEl.className='vanes-convo-list';listEl.id='vanesConvoList';listEl.hidden=true;
+ panel.insertBefore(listEl,messages);
+ titleEl=bar.querySelector('#vanesChatTitle');countEl=bar.querySelector('#vanesConvoCount');
+ const toggle=bar.querySelector('#vanesHistoryToggle');
+ bar.querySelector('#vanesNewChat').addEventListener('click',()=>{if(busy)return;newChat();listEl.hidden=true;toggle.setAttribute('aria-expanded','false');input.focus()});
+ toggle.addEventListener('click',()=>{listEl.hidden=!listEl.hidden;toggle.setAttribute('aria-expanded',String(!listEl.hidden))});
+ listEl.addEventListener('click',e=>{
+  const del=e.target.closest?.('[data-delete]');
+  if(del){remove(del.dataset.delete);if(!convos.length)listEl.hidden=true;return}
+  const item=e.target.closest?.('[data-convo]');
+  if(item&&item.dataset.convo!==activeId&&!busy){select(item.dataset.convo);listEl.hidden=true;toggle.setAttribute('aria-expanded','false');input.focus()}
+ });
  let fileInput=document.querySelector('#vanesChatFile');if(!fileInput){fileInput=document.createElement('input');fileInput.type='file';fileInput.accept='image/*';fileInput.id='vanesChatFile';fileInput.hidden=true;panel.appendChild(fileInput)}
  upload?.addEventListener('click',()=>fileInput.click());fileInput.addEventListener('change',()=>showImage(fileInput.files?.[0]));generate?.addEventListener('click',generateImage);
  messages.addEventListener('click',e=>{
@@ -70,7 +110,7 @@ function boot(){
  });
  form.addEventListener('submit',e=>{e.preventDefault();send()});
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});
- render();
+ loadConvos();
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();
