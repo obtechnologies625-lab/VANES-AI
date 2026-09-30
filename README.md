@@ -68,7 +68,7 @@ VANES AI uses a new **six-turbine wheel** visual identity with a cyberpunk neon 
 
 ## 🔐 AI security
 
-The frontend uses the Cloudflare Worker API proxy. Keep `OPENROUTER_API_KEY` server-side as a runtime secret. Never commit a real API key to browser JavaScript, README files, screenshots, or GitHub.
+The frontend talks to the server-side API proxy only; no provider key ever ships to the browser. The secret name depends on the deploy target: the Cloudflare Worker (`src/index.js`) and the Vercel function (`api/chat.js`) use `MISTRAL_API_KEY`, while the Cloudflare Pages function (`functions/api/chat.js`) uses `OPENROUTER_API_KEY`. Set whichever matches the target you deploy as a runtime secret. Never commit a real API key to browser JavaScript, README files, screenshots, or GitHub.
 
 ## 🌐 Availability
 

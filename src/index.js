@@ -1,12 +1,9 @@
 import { handleAnalytics, handleAdminAnalytics } from './analytics.js';
 import { handleContact } from './contact.js';
-const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
-const DEFAULT_MODEL = "openai/gpt-4o-mini";
-// Keep chat requests below the user's remaining OpenRouter credit allowance.
-// OpenRouter can reject a request before generation when max_tokens exceeds the
-// currently affordable amount, so VANES uses a conservative default.
+// Keep chat requests below the user's remaining provider credit allowance.
+// The upstream API can reject a request before generation when max_tokens
+// exceeds the currently affordable amount, so VANES uses a conservative default.
 const DEFAULT_MAX_TOKENS = 1200;
-const IMAGE_MAX_TOKENS = 200;
 const MAX_BODY = 9000000;
 function json(data,status=200,extra={}){return new Response(JSON.stringify(data),{status,headers:{"Content-Type":"application/json; charset=utf-8","Cache-Control":"no-store",...extra}})}
 function cors(origin){return {"Access-Control-Allow-Origin":origin||"*","Access-Control-Allow-Headers":"Content-Type","Access-Control-Allow-Methods":"GET,POST,OPTIONS","Vary":"Origin"}}
