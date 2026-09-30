@@ -1,4 +1,4 @@
-const CACHE = 'vanes-shell-v25';
+const CACHE = 'vanes-shell-v27';
 const BASE = new URL('./', self.registration.scope);
 const APP_FILES = [
   'index.html',
@@ -20,11 +20,15 @@ const APP_FILES = [
   'vanes-ai-context-fix.js',
   'vanes-profile-enforcer.js',
   'vanes-mobile.js',
+  'vanes-pwa.js',
   'manifest.webmanifest',
   'assets/vanes-logo.svg',
   'assets/vanes-turbine-wheel.svg',
   'assets/ob-technologies-lab.svg',
-  'assets/ob-tech-labs-brain.svg'
+  'assets/ob-tech-labs-brain.svg',
+  'assets/icon-192.png',
+  'assets/icon-512.png',
+  'assets/icon-maskable-512.png'
 ];
 const APP_SHELL = APP_FILES.map(file => new URL(file, BASE).href);
 
@@ -60,7 +64,10 @@ self.addEventListener('fetch', event => {
       })
       .catch(() => caches.match(event.request).then(cached => {
         if (cached) return cached;
-        return caches.match(new URL('index.html', BASE).href);
+        // Cache-busting query strings are not in the precache; match the bare path.
+        const bare = new URL(url);
+        bare.search = '';
+        return caches.match(bare.href).then(hit => hit || caches.match(new URL('index.html', BASE).href));
       }))
   );
 });
