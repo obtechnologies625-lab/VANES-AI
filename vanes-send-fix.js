@@ -42,7 +42,10 @@ function planSubmit(e){
     `${Math.max(5,minutes-Math.max(10,Math.round(minutes*0.45))-Math.max(5,Math.round(minutes*0.30))-5)} min — Review mistakes and self-test.`
   ];
   if(result){
-    result.innerHTML=`<div class="empty-illustration">✦</div><h2>${escapeHtml(title)} study plan</h2><p><strong>Goal:</strong> ${escapeHtml(goal)} · <strong>Time:</strong> ${minutes} minutes</p><ol>${steps.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ol><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary-button" type="button" id="startGeneratedPlan">Start this session →</button><button class="secondary-button" type="button" id="saveGeneratedPlan">Save this study plan</button></div>`;
+    result.innerHTML=`<div class="empty-illustration">✦</div><h2>${escapeHtml(title)} study plan</h2><p><strong>Goal:</strong> ${escapeHtml(goal)} · <strong>Time:</strong> ${minutes} minutes</p><ol>${steps.map(x=>`<li>${escapeHtml(x)}</li>`).join('')}</ol><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="primary-button" type="button" id="startGeneratedPlan">Start this session →</button><button class="secondary-button" type="button" id="saveGeneratedPlan">Save this study plan</button><button class="secondary-button" type="button" id="printGeneratedPlan">Print plan</button><button class="secondary-button" type="button" id="downloadGeneratedPlan">Download .md</button></div>`;
+    const planItem={subject:title,goal:goal,time:minutes};
+    result.querySelector('#printGeneratedPlan').onclick=()=>window.VANES_EXPORT.printSheet(window.VANES_EXPORT.sheetFor(null,planItem));
+    result.querySelector('#downloadGeneratedPlan').onclick=()=>{const E=window.VANES_EXPORT;E.downloadText(E.planMarkdown(planItem),'vanes-study-plan-'+E.slug(title)+'-'+E.dayStamp()+'.md')};
     result.querySelector('#saveGeneratedPlan').onclick=()=>{
       let plans=[];try{plans=JSON.parse(localStorage.getItem(PLANS_KEY)||'[]')}catch(_){plans=[]}
       plans.unshift({id:crypto.randomUUID?.()||String(Date.now()),subject:raw,goal,time:minutes,createdAt:new Date().toISOString()});
