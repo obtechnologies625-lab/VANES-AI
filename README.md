@@ -159,7 +159,7 @@ Learner profiles, saved plans, the Study Shelf, chat conversations and study act
 
 ## 📈 Analytics and the admin dashboard
 
-Clients POST anonymous events (profile saved, plan started, session completed, rating) to `/api/analytics`. Storage needs a **D1 database** bound as `DB`; until that binding exists the endpoint answers `503` with a readable JSON reason and the event is discarded — the app is unaffected.
+Clients POST anonymous events (profile saved, plan started, session completed, rating) to `/api/analytics`. Storage needs a **D1 database** bound as `DB`; `vanes-ai-db` has been bound that way since 2026-10-02, so events are stored (`{"ok":true,"stored":true}`) and `/api/health` reports `analyticsEnabled:true`. If the binding is ever removed the endpoint answers `503` with a readable JSON reason and the event is discarded — the app is unaffected. The `vanes_users` and `vanes_events` tables are created on the first request.
 
 Reading the data back goes through `/api/admin/analytics`, which requires `Authorization: Bearer <ADMIN_ANALYTICS_TOKEN>`. The dashboard that renders it is produced by the Worker, not shipped as a file, and is only served when the token is presented in the URL:
 
@@ -221,7 +221,7 @@ curl -s https://vanes-ai.obtechnologies625.workers.dev/sw.js | grep "const CACHE
 
 ## 🧰 Known issues
 
-- **Analytics are not stored yet.** The Worker has no `DB` (D1) binding, so every `/api/analytics` POST returns `503` and ratings are discarded. Error responses now carry CORS headers, so the browser shows the real reason instead of a CORS failure. Binding the database is a dashboard + one-line `wrangler.toml` change: [DATABASE_SETUP.md](DATABASE_SETUP.md).
+- **The admin dashboard is still locked.** Analytics events are stored (`vanes-ai-db` is bound as `DB`), but the `ADMIN_ANALYTICS_TOKEN` Worker secret has not been created, so `/api/admin/analytics` answers `401 ADMIN_ANALYTICS_TOKEN is not configured on this Worker.` and `/api/health` reports `adminAnalyticsConfigured:false`. Add the secret in Cloudflare → **Workers & Pages → vanes-ai → Settings → Variables and Secrets**, then open `/admin-analytics.html?key=YOUR_TOKEN`: [DATABASE_SETUP.md](DATABASE_SETUP.md).
 - **GitHub Pages publishes the Worker source.** `.assetsignore` does not apply to the Pages artifact, so `src/index.js`, `wrangler.toml` and `schema.sql` are publicly readable at `https://obtechnologies625-lab.github.io/VANES-AI/`. No secrets are exposed (API keys are Worker secrets). Pages stays enabled as a mirror by the owner's decision; the Worker URL is the production address.
 - **No server-side accounts.** The sign-in gate stores accounts, the session and the trial counter in the browser's `localStorage`, so it identifies the learner and meters the free trial but does not authenticate against a server and does not sync between devices.
 - **No test suite.** `node --check` catches syntax errors only; the Worker's runtime behaviour is unverified by CI.
