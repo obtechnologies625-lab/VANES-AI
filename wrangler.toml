@@ -6,3 +6,10 @@ workers_dev = true
 [assets]
 directory = "."
 binding = "ASSETS"
+
+# The Worker reads this binding as env.DB (src/analytics.js), so the binding name
+# must stay "DB" even though the database itself is called vanes-ai-db.
+[[d1_databases]]
+binding = "DB"
+database_name = "vanes-ai-db"
+database_id = "538e1a52-2fd6-4008-b931-b95a7e8c6966"
