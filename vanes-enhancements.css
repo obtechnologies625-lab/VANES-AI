@@ -267,3 +267,34 @@
 .stats-grid article:hover,.shelf-item:hover,.subject-card:hover{transform:translateY(-2px);border-color:#1f7fb8;box-shadow:0 18px 44px rgba(0,110,255,.2)}
 #toast.show{animation:vanesRise .24s ease both}
 }
+
+/* The avatar rule `.message span{width:27px;height:27px;display:grid}` matches EVERY span inside
+   a message, so the welcome pills collapsed into 27px circles with one letter per line. */
+#coach .message .vanes-content span{width:auto;height:auto;display:inline;flex:0 0 auto;place-items:initial}
+#coach .vanes-welcome-tags span{display:inline-block;width:auto;height:auto}
+#coach .vanes-content .vanes-math{display:inline;width:auto;height:auto;background:transparent;border:0;border-radius:0;box-shadow:none;color:inherit;font-family:"Space Grotesk",inherit}
+#coach .vanes-content .vanes-math-block{display:block;margin:10px 0;padding:10px 14px;border:1px solid #1d4a6b;border-radius:10px;background:#081726;overflow-x:auto;text-align:center}
+
+/* Modern-AI reading column: assistant answers flow down the page instead of sitting in boxes. */
+#coach .coach-message{align-items:flex-start}
+#coach .coach-message .vanes-bubble{max-width:100%;background:transparent;border:0;box-shadow:none;border-left:2px solid #14507a;border-radius:0;padding:2px 0 2px 14px}
+#coach .vanes-content{max-width:780px}
+#coach .vanes-content h5{margin:16px 0 8px;color:#8fe6ff;font-size:14px}
+#coach .vanes-content hr{border:0;border-top:1px solid #1b4a6b;margin:14px 0}
+#coach .vanes-content ol{padding-left:24px;margin:8px 0;display:grid;gap:4px}
+#coach .vanes-content table{border-collapse:collapse;margin:12px 0;width:100%;font-size:13px}
+#coach .vanes-content th,#coach .vanes-content td{border:1px solid #1d4a6b;padding:7px 9px;text-align:left}
+#coach .vanes-content th{background:#0a2135;color:#9feaff}
+#coach .vanes-content .vanes-math{color:#c9f0ff}
+
+/* OB lockup in the top bar pill, and a cooler hero: glowing wheel, rotating orbit ring. */
+.brand-badge{padding:5px 9px}
+.brand-badge .vanes-ob-logo{display:block;height:17px;width:auto}
+.orbit-illustration{width:262px;height:262px;top:50%;right:5%;transform:translateY(-50%);font-size:0;display:flex;align-items:center;justify-content:center}
+.orbit-illustration:before{width:330px;height:150px;left:-34px;top:56px;border-color:rgba(0,234,255,.45)}
+.orbit-illustration:after{content:"";position:absolute;inset:-6px;border:2px dashed rgba(0,234,255,.3);border-radius:50%;animation:vanesSpin 22s linear infinite}
+@keyframes vanesSpin{to{transform:rotate(360deg)}}
+.vanes-dashboard-logo{width:236px;height:236px;animation:vanesGlow 4.2s ease-in-out infinite}
+@keyframes vanesGlow{0%,100%{filter:drop-shadow(0 0 14px rgba(0,223,255,.35))}50%{filter:drop-shadow(0 0 30px rgba(0,223,255,.65))}}
+.hero-card{background:radial-gradient(circle at 84% 50%,rgba(0,234,255,.20),transparent 36%),linear-gradient(120deg,#08204a,#071025 60%,#12082a)!important}
+@media (prefers-reduced-motion: reduce){.orbit-illustration:after,.vanes-dashboard-logo{animation:none}}

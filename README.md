@@ -55,6 +55,15 @@ VANES asks for the learner profile when the app opens with a new or incomplete p
 
 Supported common Advanced combinations include **PCM, PCB, PGM, CBG, CBA, CBN, EGM, ECA, HGE, HGL, HKL, HKA, HEC and HGLi**, with an `OTHER` option for a school-specific combination.
 
+## 🔑 Opening VANES: splash, account and free trial
+
+1. **Splash.** The VANES turbine wheel fades in, then a *MADE WITH — OB Tech-Labs — OB TECH ORG* panel fades in over it, then both fade away.
+2. **Account gate.** Sign in, or create an account with **full name, phone number, email and password** (passwords are salted and hashed with SHA-256 before they are stored). Google Sign-In appears automatically once a Google OAuth Client ID is stored on the device (*Set up Google sign-in* on the gate). The app stays hidden behind the gate until the learner is signed in.
+3. **Free trial.** Every learner gets **15 AI answers** per 30-day window, counted across chat turns, question sets and marking. When the trial is used the next AI call is answered with a support panel offering a donation (Airtel Money / Web3Forms) or an **upgrade code** in the form `VANES-PRO-XXXXX`, which unlocks VANES Premium on that device.
+4. **Account card.** Settings shows who is signed in, the phone number on file and how many free answers are left, with **Sign out** and **Get Premium**.
+
+> Accounts live in the device's `localStorage`. There is no user database yet, so the gate personalises the learner space and meters the free trial — it is not server-side authentication, and it must not be described as protecting data on a server.
+
 ## 🧠 AI Study Coach
 
 - Chat, practise, analyse, mark, summarise and plan in a full-height coach workspace
@@ -179,6 +188,7 @@ When you change a cached file, bump its `?v=` cache-buster in `index.html`, and 
 | --- | --- |
 | `index.html`, `styles.css`, `vanes-*.css` | App shell and styling |
 | `vanes-runtime.js`, `vanes-study-system.js`, `full-chat.js` | Core app: views, planner/shelf/sessions, AI coach and conversations |
+| `vanes-access.js` | Brand splash, sign-in/create-account gate with phone + email + Google, and the free-trial meter with the donate/upgrade overlay |
 | `vanes-profile.js`, `vanes-product-upgrade.js`, `vanes-settings.js`, `vanes-donate.js`, `vanes-notifications.js`, `vanes-mobile.js` | Feature modules |
 | `vanes-brand.js`, `vanes-send-fix.js`, `vanes-ai-context-fix.js`, `vanes-profile-enforcer.js` | Patch layers loaded after the modules above |
 | `vanes-pwa.js`, `sw.js`, `manifest.webmanifest`, `assets/icon-*.png` | Install prompt, offline banner, service worker and icons |
@@ -197,7 +207,7 @@ Pushing to `main` runs three workflows:
 | Workflow | What it does |
 | --- | --- |
 | **Deploy VANES AI to Cloudflare Workers** | Production. `wrangler deploy` of `src/index.js` with the repo root as static assets. Needs the `CLOUDFLARE_API_TOKEN` and `CLOUDFLARE_ACCOUNT_ID` repository secrets; without them the deploy step is **skipped but the run still reports success**, so always confirm the `Deploy Worker` step conclusion. |
-| **Deploy VANES AI** | Publishes the repository to GitHub Pages. Pages has no Worker, so `/api/*` routes do not exist there — it is a mirror, not the production target. It uploads the **entire** repository and ignores `.assetsignore`, so it currently serves `src/index.js`, `wrangler.toml` and `schema.sql` publicly; Pages is being retired for that reason. |
+| **Deploy VANES AI** | Publishes the repository to GitHub Pages. Pages has no Worker, so `/api/*` routes do not exist there — it is a mirror, not the production target. It uploads the **entire** repository and ignores `.assetsignore`, so it currently serves `src/index.js`, `wrangler.toml` and `schema.sql` publicly. Pages is deliberately kept on as a second mirror; the Worker domain in this README is the address to share. |
 | **Node.js CI** | `node --check` on every JavaScript file under Node 20, 22 and 24. There is no test suite. |
 
 Because static assets are the repository root, `.assetsignore` decides what the *Worker* does not publish. Anything that must stay off the Worker — `src/`, `.github/`, `schema.sql`, `wrangler.toml` — belongs there. Wrangler 4 has no `exclude` key under `[assets]`; adding one is silently ignored and would publish those files (and can also break the 25 MiB asset limit). Note that `.assetsignore` has **no effect on the GitHub Pages deploy**, which uploads everything.
@@ -212,7 +222,8 @@ curl -s https://vanes-ai.obtechnologies625.workers.dev/sw.js | grep "const CACHE
 ## 🧰 Known issues
 
 - **Analytics are not stored yet.** The Worker has no `DB` (D1) binding, so every `/api/analytics` POST returns `503` and ratings are discarded. Error responses now carry CORS headers, so the browser shows the real reason instead of a CORS failure. Binding the database is a dashboard + one-line `wrangler.toml` change: [DATABASE_SETUP.md](DATABASE_SETUP.md).
-- **GitHub Pages publishes the Worker source.** `.assetsignore` does not apply to the Pages artifact, so `src/index.js`, `wrangler.toml` and `schema.sql` are publicly readable at `https://obtechnologies625-lab.github.io/VANES-AI/`. No secrets are exposed (API keys are Worker secrets), but Pages is a redundant mirror and should be switched off.
+- **GitHub Pages publishes the Worker source.** `.assetsignore` does not apply to the Pages artifact, so `src/index.js`, `wrangler.toml` and `schema.sql` are publicly readable at `https://obtechnologies625-lab.github.io/VANES-AI/`. No secrets are exposed (API keys are Worker secrets). Pages stays enabled as a mirror by the owner's decision; the Worker URL is the production address.
+- **No server-side accounts.** The sign-in gate stores accounts, the session and the trial counter in the browser's `localStorage`, so it identifies the learner and meters the free trial but does not authenticate against a server and does not sync between devices.
 - **No test suite.** `node --check` catches syntax errors only; the Worker's runtime behaviour is unverified by CI.
 
 ## 👨‍💻 Made by OB Technologies Lab

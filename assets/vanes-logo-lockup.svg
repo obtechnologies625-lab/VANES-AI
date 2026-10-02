@@ -10,13 +10,21 @@
 <rect width="760" height="200" rx="34" fill="url(#vlBg)"/>
 <g transform="translate(102 100) scale(.332)" filter="url(#vlG)">
   <circle r="206" fill="none" stroke="url(#vlN)" stroke-width="16"/>
-  <g fill="url(#vlN)" stroke="#eaffff" stroke-width="7">
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z"/>
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(60)"/>
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(120)"/>
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(180)"/>
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(240)"/>
-    <path d="M-18-40C-90-122-74-164 2-182c48 52 50 112 18 164-12 15-24 22-38 18Z" transform="rotate(300)"/>
+  <g stroke="#7fd8ff" stroke-width="6" opacity=".8">
+    <path d="M0-206V-186" transform="rotate(30)"/>
+    <path d="M0-206V-186" transform="rotate(90)"/>
+    <path d="M0-206V-186" transform="rotate(150)"/>
+    <path d="M0-206V-186" transform="rotate(210)"/>
+    <path d="M0-206V-186" transform="rotate(270)"/>
+    <path d="M0-206V-186" transform="rotate(330)"/>
+  </g>
+  <g fill="url(#vlN)" stroke="#eaffff" stroke-width="7" stroke-linejoin="round">
+    <path d="M-14-58 26-186 66-158 24-50Z"/>
+    <path d="M-14-58 26-186 66-158 24-50Z" transform="rotate(60)"/>
+    <path d="M-14-58 26-186 66-158 24-50Z" transform="rotate(120)"/>
+    <path d="M-14-58 26-186 66-158 24-50Z" transform="rotate(180)"/>
+    <path d="M-14-58 26-186 66-158 24-50Z" transform="rotate(240)"/>
+    <path d="M-14-58 26-186 66-158 24-50Z" transform="rotate(300)"/>
   </g>
   <circle r="74" fill="#070d20" stroke="url(#vlN)" stroke-width="16"/>
   <circle r="42" fill="#101936" stroke="#d7fbff" stroke-width="6"/>

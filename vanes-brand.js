@@ -14,7 +14,7 @@
   function applyTheme(mode){const m=mode==='light'?'light':'dark';document.body.classList.toggle('dark',m==='dark');document.body.dataset.theme=m;localStorage.setItem('vanes-theme',m);if(theme){const label=theme.querySelector('span');if(label)label.textContent=m==='dark'?'Light mode':'Dark mode';theme.firstChild.textContent=m==='dark'?'☀ ':'☾ ';}}
   applyTheme(localStorage.getItem('vanes-theme')||'dark');
   if(theme&&!theme.dataset.vanesBound){theme.dataset.vanesBound='1';theme.addEventListener('click',e=>{e.preventDefault();applyTheme(document.body.classList.contains('dark')?'light':'dark');});}
-  const upgrade=document.createElement('script');upgrade.src='vanes-product-upgrade.js?v=20261001g';document.body.appendChild(upgrade);
+  const upgrade=document.createElement('script');upgrade.src='vanes-product-upgrade.js?v=20261002a';document.body.appendChild(upgrade);
   upgrade.onload=()=>{
     const context=document.createElement('script');context.src='vanes-ai-context-fix.js?v=20260914c';document.body.appendChild(context);
     const guard=document.createElement('script');guard.src='vanes-profile-enforcer.js?v=20261001d';document.body.appendChild(guard);

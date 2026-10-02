@@ -1,4 +1,4 @@
-const CACHE = 'vanes-shell-v31';
+const CACHE = 'vanes-shell-v32';
 const BASE = new URL('./', self.registration.scope);
 const APP_FILES = [
   'index.html',
@@ -7,6 +7,7 @@ const APP_FILES = [
   'vanes-brand.css',
   'vanes-reference.css',
   'vanes-runtime.js',
+  'vanes-access.js',
   'vanes-donate.js',
   'full-chat.js',
   'vanes-study-system.js',
@@ -22,6 +23,7 @@ const APP_FILES = [
   'vanes-pwa.js',
   'manifest.webmanifest',
   'assets/vanes-logo.svg',
+  'assets/vanes-logo-lockup.svg',
   'assets/vanes-turbine-wheel.svg',
   'assets/ob-technologies-lab.svg',
   'assets/ob-tech-labs-brain.svg',
