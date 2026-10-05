@@ -39,7 +39,7 @@ Then commit and push to `main`. The Cloudflare deploy workflow runs `wrangler de
 >
 > Equally, do not add the `[[d1_databases]]` block before the database exists — `wrangler deploy` fails on an unknown `database_id`, and a failed deploy leaves production on the previous version.
 
-The API creates the `vanes_users` and `vanes_events` tables automatically on the first request, so no migration step is required. Applying `schema.sql` is optional; it creates the same tables plus indexes that make the admin dashboard queries faster as the data grows:
+The API creates the `vanes_users`, `vanes_events` and `vanes_quota` tables automatically on the first request, so no migration step is required. `vanes_quota` holds the server-side free-trial counter described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Applying `schema.sql` is optional; it creates the same tables plus indexes that make the admin dashboard queries faster as the data grows:
 
 1. Open `vanes-ai-db` → **Console** tab.
 2. Paste the contents of `schema.sql`.

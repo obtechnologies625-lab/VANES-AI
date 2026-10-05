@@ -1,4 +1,4 @@
-const CACHE = 'vanes-shell-v32';
+const CACHE = 'vanes-shell-v33';
 const BASE = new URL('./', self.registration.scope);
 const APP_FILES = [
   'index.html',
@@ -8,6 +8,8 @@ const APP_FILES = [
   'vanes-reference.css',
   'vanes-runtime.js',
   'vanes-access.js',
+  'vanes-firebase.js',
+  'vanes-sync.js',
   'vanes-donate.js',
   'full-chat.js',
   'vanes-study-system.js',
@@ -54,6 +56,22 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   if (event.request.method !== 'GET') return;
   const url = new URL(event.request.url);
+
+  // Firebase's SDK is cross-origin and versioned, so cache it as it is fetched; without this
+  // a signed-in learner offline would fall back to the device-only account gate.
+  if (url.origin === 'https://www.gstatic.com' && url.pathname.startsWith('/firebasejs/')) {
+    event.respondWith(
+      fetch(event.request)
+        .then(response => {
+          const copy = response.clone();
+          caches.open(CACHE).then(cache => cache.put(event.request, copy)).catch(() => {});
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
   if (url.origin !== location.origin) return;
 
   event.respondWith(

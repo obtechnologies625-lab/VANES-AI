@@ -16,7 +16,9 @@ api/
 docs/
 google-apps-script/
 DATABASE_SETUP.md
+FIREBASE_SETUP.md
 schema.sql
+firestore.rules
 wrangler.toml
 vercel.json
 .assetsignore
