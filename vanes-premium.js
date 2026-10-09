@@ -8,9 +8,26 @@ const PREMIUM='vanes-premium-v1',PENDING='vanes-premium-progress-v1',PROFILE2='v
 const read=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(_){return f}};
 const write=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));return true}catch(_){return false}};
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const premium=()=>read(PREMIUM,null);
+/* The premium pass lasts one month: once premium_until (mirrored into storage) is in the
+   past the hub locks itself, exactly like the Worker locks the endpoints. */
+const premium=()=>{const p=read(PREMIUM,null);if(!p)return null;const until=Number(p.until)||0;return until&&until<=Date.now()?null:p};
+const premiumDaysLeft=()=>{const p=read(PREMIUM,null);const until=Number(p?.until)||0;return until?Math.max(0,Math.ceil((until-Date.now())/86400000)):null};
 const profile=()=>read(PROFILE2,null)||read(PROFILE1,null);
 const myName=()=>profile()?.name||window.VANES_ACCOUNT?.session?.()?.name||'VANES learner';
+const myUid=()=>window.VANES_ACCOUNT?.session?.()?.uid||'';
+const initial=n=>{const s=String(n||'').trim();return s?s[0].toUpperCase():'V'};
+const comboLabel=()=>{const pf=profile();return pf?.combination||(pf?.level?pf.level+' subjects':'your subjects')};
+/* Every portal call carries the learner's card (name, level, combination) so classmates can
+   find them in Discover and the feed shows the questions for their own combination. */
+function profileQuery(extra){
+ const pf=profile()||{},s=window.VANES_ACCOUNT?.session?.()||{},q=new URLSearchParams();
+ const name=pf.name||s.name||'';
+ if(name)q.set('name',name);
+ if(pf.level)q.set('level',pf.level);
+ if(pf.combination)q.set('combination',pf.combination);
+ if(extra)for(const k of Object.keys(extra))if(extra[k])q.set(k,extra[k]);
+ return q.toString();
+}
 const apiBase=()=>String(window.VANES_CHAT_ENDPOINT||location.origin+'/api/chat').replace(/\/api\/chat$/,'');
 /* Tanzania wall-clock day keys (EAT is UTC+3 all year), matching the Worker's counters. */
 const eatDay=()=>new Date(Date.now()+3*3600000).toISOString().slice(0,10);
@@ -72,6 +89,31 @@ function css(){if(document.getElementById('vanes-premium-css'))return;const s=do
 '.pm-avatar.on{border-color:#00e5ff}'+
 '.pm-avatar-preview{width:104px;height:104px;border-radius:50%;object-fit:cover;border:2px solid #00e5ff;background-size:cover;background-position:center}'+
 '.vanes-avatar-image{background-size:cover!important;background-position:center!important}'+
+'.pm-subtabs{display:flex;gap:8px;margin:12px 0}'+
+'.pm-subtab{flex:1;padding:9px 10px;border-radius:11px;border:1px solid var(--line,#2a3b55);background:transparent;color:inherit;font:700 12.5px inherit;cursor:pointer}'+
+'.pm-subtab.on{border-color:#00e5ff;color:#00e5ff}'+
+'.pm-post-card{display:flex;gap:11px;width:100%;padding:12px;border:1px solid var(--line,#2a3b55);border-radius:14px;background:transparent;color:inherit;font:inherit;text-align:left;cursor:pointer;margin-top:8px}'+
+'.pm-post-card:hover{border-color:#00e5ff}'+
+'.pm-avatar-circle{flex:0 0 42px;width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font:800 16px inherit;color:#04121f;background:linear-gradient(135deg,#00e5ff,#7c3aed)}'+
+'.pm-avatar-circle.lg{flex-basis:64px;width:64px;height:64px;font-size:24px}'+
+'.pm-post-main{display:grid;gap:3px;min-width:0;flex:1}'+
+'.pm-post-head{display:flex;align-items:center;gap:7px;flex-wrap:wrap}'+
+'.pm-post-head small{opacity:.62;font-size:11px}'+
+'.pm-badge{padding:2px 8px;border-radius:999px;border:1px solid rgba(0,229,255,.35);color:#00e5ff;font-size:10.5px;font-weight:800}'+
+'.pm-post-title{font-weight:800}'+
+'.pm-post-preview{opacity:.75;font-size:12.5px;line-height:1.5}'+
+'.pm-post-foot{opacity:.6;font-size:11px;margin-top:2px}'+
+'.pm-search-row{display:flex;gap:9px;margin:8px 0}'+
+'.pm-search-row input{flex:1;min-width:0}'+
+'.pm-profile-head{display:flex;gap:14px;align-items:center;margin:10px 0}'+
+'.pm-unread{min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#00e5ff;color:#04121f;font:800 11px/20px inherit;text-align:center;flex:0 0 auto;align-self:center}'+
+'.pm-thread-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}'+
+'.pm-bubbles{display:flex;flex-direction:column;gap:8px;max-height:420px;overflow-y:auto;padding:10px;border:1px solid var(--line,#2a3b55);border-radius:14px}'+
+'.pm-bubble{max-width:78%;padding:9px 12px;border-radius:14px 14px 14px 4px;border:1px solid var(--line,#2a3b55);font-size:13px;line-height:1.5;white-space:pre-wrap;word-break:break-word;align-self:flex-start}'+
+'.pm-bubble.own{align-self:flex-end;border-radius:14px 14px 4px 14px;border-color:#7c3aed;background:rgba(124,58,237,.14)}'+
+'.pm-bubble small{display:block;opacity:.55;font-size:10px;margin-top:3px}'+
+'.pm-composer{display:flex;gap:9px;margin-top:10px}'+
+'.pm-composer input{flex:1;min-width:0}'+
 '@media(max-width:560px){.pm-hist{height:160px}.pm-item{flex-direction:column;align-items:stretch}}';
 document.head.appendChild(s)}
 
@@ -91,7 +133,7 @@ async function api(path,opts={}){
 function errText(r){
  const d=r.data||{};
  if(r.status===401)return (d.error||'Sign in to VANES to use premium tools.')+' Premium server tools need a cloud account — sign in with email or Google (a device-only account cannot reach the premium servers).';
- if(r.status===402)return 'VANES Premium is required for this tool. Donate 3,500 TZS with Airtel Money to unlock it.';
+ if(r.status===402)return 'VANES Premium is required for this tool. A premium pass lasts one month — donate 3,500 TZS with Airtel Money to unlock or renew it.';
  if(r.status===503)return d.error||'The premium service is not ready on the server yet. Try again later.';
  return d.error||('Request failed ('+(r.status||'offline')+').');
 }
@@ -210,16 +252,18 @@ const TABS=[['links','Study links'],['portal','Student portal'],['tracker','Stud
 function heroHTML(p){
  const s=window.VANES_ACCOUNT?.session?.()||{};
  const sync=s.uid?'synced to your cloud account':'this device only — sign in with email or Google so parents can follow your progress';
- return '<section class="panel pm-card"><div class="pm-row" style="justify-content:space-between"><div><p class="eyebrow">VANES PREMIUM</p><h2>Premium tools are unlocked</h2><p class="support-copy">Code '+esc(p.code)+' · '+esc(sync)+'.</p></div><button class="secondary-button" type="button" id="pmSyncNow">Sync progress</button></div></section>';
+ const left=premiumDaysLeft();
+ const pass=left===null?'':' · pass ends in '+left+' day'+(left===1?'':'s');
+ return '<section class="panel pm-card"><div class="pm-row" style="justify-content:space-between"><div><p class="eyebrow">VANES PREMIUM</p><h2>Premium tools are unlocked</h2><p class="support-copy">'+(p.code?'Code '+esc(p.code):'Premium pass')+pass+' · '+esc(sync)+'.</p></div><button class="secondary-button" type="button" id="pmSyncNow">Sync progress</button></div>'+(left!==null?'<p class="support-copy" style="margin-top:8px">The premium pass lasts one month. When it ends, the account returns to the normal free account automatically — your links, questions and tracker data stay on your account, they just lock until you renew.</p>':'')+'</section>';
 }
 function lockedHTML(){
  return '<article class="panel pm-card"><p class="eyebrow">VANES PREMIUM</p><h2>Unlock the premium study tools</h2>'+
- '<p class="support-copy">One-time donation of 3,500 TZS per learner, paid with Airtel Money on your phone. The moment the payment is confirmed, the OB Tech-Labs code counter issues your VANES-PRO upgrade code on screen — and it unlocks everything below.</p>'+
+ '<p class="support-copy">One-time donation of 3,500 TZS per learner, paid with Airtel Money on your phone. The moment the payment is confirmed, the OB Tech-Labs code counter issues your VANES-PRO upgrade code on screen. The pass runs for one full month — after that the account returns to the normal free account automatically.</p>'+
  '<div class="pm-teasers">'+
  '<div class="pm-teaser"><b>Study-link shortener</b><small>Short VANES links for long study videos and articles — video quality and every parameter stay exactly the same.</small></div>'+
- '<div class="pm-teaser"><b>Student portal</b><small>Post questions and answer what other learners are solving.</small></div>'+
- '<div class="pm-teaser"><b>Study tracker</b><small>Minutes, question attempts and AI questions per subject, day by day as a histogram.</small></div>'+
- '<div class="pm-teaser"><b>Parent access</b><small>Give your parent a code so they can follow your progress from their phone.</small></div>'+
+ '<div class="pm-teaser"><b>Student portal</b><small>Questions for your own combination, a Discover search for classmates and private chats — Instagram feed style, WhatsApp chat style.</small></div>'+
+ '<div class="pm-teaser"><b>Study tracker</b><small>Minutes, sessions, question attempts and AI questions per subject, day by day as a histogram.</small></div>'+
+ '<div class="pm-teaser"><b>Parent access</b><small>Enter your parent\'s own number and VANES sends them a private WhatsApp link — up to two parents.</small></div>'+
  '<div class="pm-teaser"><b>Profile pictures</b><small>Upload your own photo or pick one of the VANES avatars.</small></div>'+
  '</div>'+
  '<div class="pm-row" style="margin-top:14px"><button class="primary-button" type="button" id="pmDonate">Donate 3,500 TZS with Airtel Money →</button></div>'+
@@ -322,77 +366,193 @@ async function fillLinks(panel){
  }));
 }
 
-/* Student portal ---------------------------------------------------------- */
-const portal={mode:'list',postId:'',subject:''};
+/* Student portal — an Instagram-style feed and profiles with WhatsApp-style private chats.
+   The feed shows the questions written for the learner's own combination plus general
+   questions, Discover finds classmates by name, and every profile has a Message button. */
+const portal={tab:'feed',mode:'',postId:'',subject:'',peer:'',profileUid:'',query:''};
 function portalSubjects(){
  const set=new Set([...(profile()?.subjects||[]),'General study']);
  return [...set].sort();
 }
-async function renderPortal(panel){
- if(portal.mode==='thread')return renderThread(panel);
- const my=paintToken;
- const list=r=>api('/api/portal'+(r?'?subject='+encodeURIComponent(r):''));
- const first=await list(portal.subject);
- if(my!==paintToken||!panel.isConnected)return;
- if(!first.ok){panel.innerHTML=errorCard(first);bindErrorCard(panel);return}
- const subjects=portalSubjects();
+function portalShell(panel,lede){
  panel.innerHTML='<article class="panel pm-card"><h2>Student portal</h2>'+
- '<p class="support-copy">Ask a question and learners across VANES can answer it. Everything stays inside the curriculum community — be kind and show your working.</p>'+
- '<div class="pm-row"><select id="pmPortalSubject" style="max-width:240px"><option value="">All subjects</option>'+subjects.map(s=>'<option value="'+esc(s)+'"'+(s===portal.subject?' selected':'')+'>'+esc(s)+'</option>').join('')+'</select><button class="secondary-button" type="button" id="pmPortalRefresh">Refresh</button></div>'+
- '<details style="margin-top:12px"><summary style="cursor:pointer;font-weight:700">Ask the portal a question</summary>'+
+ '<p class="support-copy">'+lede+'</p>'+
+ '<div class="pm-subtabs" id="pmPortalTabs">'+[['feed','Feed'],['discover','Discover'],['chats','Chats']].map(([id,label])=>'<button type="button" class="pm-subtab'+(portal.tab===id?' on':'')+'" data-ptab="'+id+'">'+label+'</button>').join('')+'</div>'+
+ '<div id="pmPortalBody"><p class="pm-empty">Opening…</p></div></article>';
+ panel.querySelectorAll('[data-ptab]').forEach(b=>b.addEventListener('click',()=>{
+  portal.tab=b.dataset.ptab;portal.mode='';
+  panel.querySelectorAll('[data-ptab]').forEach(x=>x.classList.toggle('on',x===b));
+  void paintPortalBody(panel);
+ }));
+}
+async function renderPortal(panel){
+ if(portal.mode==='post')return renderPostThread(panel);
+ if(portal.mode==='peer')return renderPeerProfile(panel);
+ if(portal.mode==='dm')return renderChat(panel);
+ const lede=portal.tab==='discover'
+  ?'Search classmates by name, open their profile and send them a private message — like finding a friend on Instagram.'
+  :portal.tab==='chats'
+   ?'Your private chats with classmates. A badge means a new message is waiting.'
+   :'Questions written for your combination ('+esc(comboLabel())+') appear here first, and general questions are visible to everyone. Be kind and show your working.';
+ portalShell(panel,lede);
+ await paintPortalBody(panel);
+}
+async function paintPortalBody(panel){
+ const box=panel.querySelector('#pmPortalBody');if(!box)return;
+ box.innerHTML='<p class="pm-empty">Opening…</p>';
+ if(portal.tab==='discover')return paintDiscover(panel);
+ if(portal.tab==='chats')return paintChats(panel);
+ return paintFeed(panel);
+}
+function postCard(p){
+ return '<button type="button" class="pm-post-card" data-post="'+esc(p.id)+'"><span class="pm-avatar-circle">'+esc(initial(p.author))+'</span><span class="pm-post-main"><span class="pm-post-head"><b>'+esc(p.author||'VANES learner')+'</b>'+(p.combination?'<span class="pm-badge">'+esc(p.combination)+'</span>':'')+'<small>'+esc(fmtDate(p.created_at))+'</small></span><span class="pm-post-title">'+esc(p.title)+'</span>'+(p.preview?'<span class="pm-post-preview">'+esc(p.preview)+'</span>':'')+'<span class="pm-post-foot">'+esc(p.subject||'General study')+' · '+Number(p.reply_count||0)+' repl'+(Number(p.reply_count)===1?'y':'ies')+' · tap to answer</span></span></button>';
+}
+async function paintFeed(panel){
+ const my=++paintToken;
+ const qs=profileQuery(portal.subject?{subject:portal.subject}:null);
+ const r=await api('/api/portal'+(qs?'?'+qs:''));
+ if(my!==paintToken||!panel.isConnected)return;
+ const box=panel.querySelector('#pmPortalBody');if(!box)return;
+ if(!r.ok){box.innerHTML='<p class="pm-error">'+esc(errText(r))+'</p>';return}
+ const subjects=portalSubjects(),pf=profile()||{};
+ box.innerHTML='<div class="pm-row"><select id="pmPortalSubject" style="max-width:240px"><option value="">All subjects</option>'+subjects.map(s=>'<option value="'+esc(s)+'"'+(s===portal.subject?' selected':'')+'>'+esc(s)+'</option>').join('')+'</select><button class="secondary-button" type="button" id="pmPortalRefresh">Refresh</button></div>'+
+ '<details style="margin-top:10px"><summary style="cursor:pointer;font-weight:700">Ask the portal a question</summary>'+
  '<form id="pmPostForm" style="margin-top:12px"><label>Question title<input id="pmPostTitle" maxlength="120" placeholder="e.g. Why does aluminium resist corrosion?" required></label>'+
  '<div class="pm-grid"><label>Subject<select id="pmPostSubject">'+subjects.map(s=>'<option>'+esc(s)+'</option>').join('')+'</select></label>'+
  '<label>Your name<input id="pmPostAuthor" maxlength="40" value="'+esc(myName())+'"></label></div>'+
  '<label>What do you need help with?<textarea id="pmPostBody" maxlength="2000" placeholder="Explain the question and what you have tried…" required></textarea></label>'+
  '<div class="pm-row"><button class="primary-button" type="submit">Post question →</button><span id="pmPostStatus" class="pm-ok"></span></div></form></details>'+
- '<div id="pmPostList"></div></article>';
- const sSel=panel.querySelector('#pmPortalSubject');
- sSel.addEventListener('change',()=>{portal.subject=sSel.value;void renderPortal(panel)});
- panel.querySelector('#pmPortalRefresh').addEventListener('click',()=>void renderPortal(panel));
- const form=panel.querySelector('#pmPostForm'),status=panel.querySelector('#pmPostStatus');
+ '<div id="pmPostList"></div>';
+ const sSel=box.querySelector('#pmPortalSubject');
+ sSel.addEventListener('change',()=>{portal.subject=sSel.value;void paintFeed(panel)});
+ box.querySelector('#pmPortalRefresh').addEventListener('click',()=>void paintFeed(panel));
+ const form=box.querySelector('#pmPostForm'),status=box.querySelector('#pmPostStatus');
  form.addEventListener('submit',async e=>{
   e.preventDefault();status.className='pm-ok';status.textContent='Posting…';
-  const r2=await api('/api/portal',{method:'POST',body:JSON.stringify({kind:'post',title:form.querySelector('#pmPostTitle').value.trim(),subject:form.querySelector('#pmPostSubject').value,body:form.querySelector('#pmPostBody').value.trim(),author:form.querySelector('#pmPostAuthor').value.trim()})});
+  const r2=await api('/api/portal',{method:'POST',body:JSON.stringify({kind:'post',title:form.querySelector('#pmPostTitle').value.trim(),subject:form.querySelector('#pmPostSubject').value,body:form.querySelector('#pmPostBody').value.trim(),author:form.querySelector('#pmPostAuthor').value.trim(),level:pf.level||'',combination:pf.combination||''})});
   if(!r2.ok){status.className='pm-error';status.textContent=errText(r2);return}
   window.showToast?.('Your question is on the portal ✓');
-  portal.mode='thread';portal.postId=r2.data.post.id;void renderThread(panel);
+  portal.mode='post';portal.postId=r2.data.post.id;void renderPostThread(panel);
  });
- fillPosts(panel,first);
+ fillFeed(panel,r);
 }
-function postRow(p){
- return '<button type="button" class="pm-subject-row" data-post="'+esc(p.id)+'" style="display:block;text-align:left"><b>'+esc(p.title)+'</b>'+
- '<small style="display:block;opacity:.72;margin-top:3px">'+esc(p.author||'VANES learner')+' · '+esc(p.subject||'General study')+' · '+esc(fmtDate(p.created_at))+' · '+Number(p.reply_count||0)+' repl'+(Number(p.reply_count)===1?'y':'ies')+'</small>'+
- (p.preview?'<small style="display:block;opacity:.6;margin-top:4px">'+esc(p.preview)+'</small>':'')+'</button>';
-}
-function fillPosts(panel,result){
+function fillFeed(panel,result){
  const box=panel.querySelector('#pmPostList');if(!box)return;
  const posts=result.data?.posts||[];
- box.innerHTML=posts.length?'<div class="pm-subject-list">'+posts.map(postRow).join('')+'</div>':'<p class="pm-empty">No questions here yet. Ask the first one — other learners will see it.</p>';
- box.querySelectorAll('[data-post]').forEach(b=>b.addEventListener('click',()=>{portal.mode='thread';portal.postId=b.dataset.post;void renderThread(panel)}));
+ box.innerHTML=posts.length?'<div class="pm-subject-list">'+posts.map(postCard).join('')+'</div>':'<p class="pm-empty">No questions here yet. Ask the first one — learners in '+esc(comboLabel())+' will see it.</p>';
+ box.querySelectorAll('[data-post]').forEach(b=>b.addEventListener('click',()=>{portal.mode='post';portal.postId=b.dataset.post;void renderPostThread(panel)}));
 }
-async function renderThread(panel){
+async function renderPostThread(panel){
  const my=++paintToken;
- const r=await api('/api/portal?id='+encodeURIComponent(portal.postId));
+ const r=await api('/api/portal?'+profileQuery({id:portal.postId}));
  if(my!==paintToken||!panel.isConnected)return;
  if(!r.ok){panel.innerHTML=errorCard(r);bindErrorCard(panel);return}
- const post=r.data.post,replies=r.data.replies||[];
- panel.innerHTML='<article class="panel pm-card"><button type="button" class="secondary-button" id="pmBack">← Back to the portal</button>'+
- '<h2 style="margin-top:12px">'+esc(post.title)+'</h2>'+
- '<p class="support-copy">'+esc(post.author||'VANES learner')+' · '+esc(post.subject||'General study')+' · '+esc(fmtDate(post.created_at))+'</p>'+
+ const post=r.data.post,replies=r.data.replies||[],uid=myUid();
+ panel.innerHTML='<article class="panel pm-card"><button type="button" class="secondary-button" id="pmBack">← Back to the feed</button>'+
+ '<div class="pm-thread-head" style="margin-top:12px"><span class="pm-avatar-circle">'+esc(initial(post.author))+'</span>'+
+ '<div style="min-width:0"><b>'+esc(post.author||'VANES learner')+'</b>'+(post.combination?' <span class="pm-badge">'+esc(post.combination)+'</span>':'')+
+ '<small style="display:block;opacity:.65;margin-top:2px">'+esc(post.subject||'General study')+(post.level?' · '+esc(post.level):'')+' · '+esc(fmtDate(post.created_at))+'</small></div>'+
+ (post.uid&&post.uid!==uid?'<button type="button" class="secondary-button" id="pmAuthorProfile" style="margin-left:auto">View profile</button>':'')+'</div>'+
+ '<h2>'+esc(post.title)+'</h2>'+
  '<p style="white-space:pre-wrap">'+esc(post.body)+'</p>'+
  '<h3 style="margin-top:16px">Answers ('+replies.length+')</h3>'+
- (replies.length?replies.map(x=>'<div class="pm-reply'+(x.author===myName()?' own':'')+'"><b>'+esc(x.author||'VANES learner')+'</b> <small style="opacity:.7">'+esc(fmtDate(x.created_at))+'</small><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(x.body)+'</p></div>').join(''):'<p class="pm-empty">No answers yet — be the first.</p>')+
+ (replies.length?replies.map(x=>'<div class="pm-reply'+((x.uid&&x.uid===uid)||x.author===myName()?' own':'')+'"><b>'+esc(x.author||'VANES learner')+'</b> <small style="opacity:.7">'+esc(fmtDate(x.created_at))+'</small><p style="white-space:pre-wrap;margin:6px 0 0">'+esc(x.body)+'</p></div>').join(''):'<p class="pm-empty">No answers yet — be the first.</p>')+
  '<form id="pmReplyForm" style="margin-top:14px"><label>Your answer<textarea id="pmReplyBody" maxlength="2000" placeholder="Explain the answer step by step…" required></textarea></label>'+
  '<label>Your name<input id="pmReplyAuthor" maxlength="40" value="'+esc(myName())+'"></label>'+
  '<div class="pm-row"><button class="primary-button" type="submit">Send answer →</button><span id="pmReplyStatus" class="pm-ok"></span></div></form></article>';
- panel.querySelector('#pmBack').addEventListener('click',()=>{portal.mode='list';void renderPortal(panel)});
+ panel.querySelector('#pmBack').addEventListener('click',()=>{portal.mode='';void renderPortal(panel)});
+ panel.querySelector('#pmAuthorProfile')?.addEventListener('click',()=>{portal.mode='peer';portal.profileUid=post.uid;void renderPeerProfile(panel)});
  const form=panel.querySelector('#pmReplyForm'),status=panel.querySelector('#pmReplyStatus');
  form.addEventListener('submit',async e=>{
   e.preventDefault();status.className='pm-ok';status.textContent='Sending…';
   const r2=await api('/api/portal',{method:'POST',body:JSON.stringify({kind:'reply',postId:post.id,body:form.querySelector('#pmReplyBody').value.trim(),author:form.querySelector('#pmReplyAuthor').value.trim()})});
   if(!r2.ok){status.className='pm-error';status.textContent=errText(r2);return}
-  void renderThread(panel);
+  void renderPostThread(panel);
  });
+}
+async function paintDiscover(panel){
+ const box=panel.querySelector('#pmPortalBody');if(!box)return;
+ box.innerHTML='<div class="pm-search-row"><input id="pmSearchInput" maxlength="40" placeholder="Search classmates by name…" value="'+esc(portal.query||'')+'"><button class="primary-button" type="button" id="pmSearchGo">Search →</button></div><div id="pmSearchResults"></div>';
+ const input=box.querySelector('#pmSearchInput');
+ const go=()=>void doSearch(panel,input.value);
+ box.querySelector('#pmSearchGo').addEventListener('click',go);
+ input.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();go()}});
+ if(portal.query)void doSearch(panel,portal.query);
+ else{box.querySelector('#pmSearchResults').innerHTML='<p class="pm-empty">Type at least two letters of a classmate\'s name — learners appear after they open the portal once.</p>';input.focus()}
+}
+async function doSearch(panel,query){
+ portal.query=String(query||'').trim();
+ const box=panel.querySelector('#pmSearchResults');if(!box)return;
+ if(portal.query.length<2){box.innerHTML='<p class="pm-empty">Type at least two letters of a classmate\'s name.</p>';return}
+ box.innerHTML='<p class="pm-empty">Searching…</p>';
+ const r=await api('/api/portal?'+profileQuery({search:portal.query}));
+ if(!panel.isConnected||!box.isConnected)return;
+ if(!r.ok){box.innerHTML='<p class="pm-error">'+esc(errText(r))+'</p>';return}
+ const users=r.data?.users||[];
+ box.innerHTML=users.length?users.map(userCard).join(''):'<p class="pm-empty">No classmates found for "'+esc(portal.query)+'". Names appear after a learner opens the portal once.</p>';
+ box.querySelectorAll('[data-user]').forEach(b=>b.addEventListener('click',()=>{portal.mode='peer';portal.profileUid=b.dataset.user;void renderPeerProfile(panel)}));
+}
+function userCard(u){
+ return '<button type="button" class="pm-post-card" data-user="'+esc(u.uid)+'"><span class="pm-avatar-circle">'+esc(initial(u.name))+'</span><span class="pm-post-main"><span class="pm-post-head"><b>'+esc(u.name||'VANES learner')+'</b>'+(u.combination?'<span class="pm-badge">'+esc(u.combination)+'</span>':'')+'</span><span class="pm-post-foot">'+esc([u.level,'tap to view profile'].filter(Boolean).join(' · '))+'</span></span></button>';
+}
+async function paintChats(panel){
+ const my=++paintToken;
+ const r=await api('/api/portal?'+profileQuery({inbox:'1'}));
+ if(my!==paintToken||!panel.isConnected)return;
+ const box=panel.querySelector('#pmPortalBody');if(!box)return;
+ if(!r.ok){box.innerHTML='<p class="pm-error">'+esc(errText(r))+'</p>';return}
+ const chats=r.data?.chats||[];
+ box.innerHTML=chats.length?chats.map(chatCard).join(''):'<p class="pm-empty">No chats yet. Open Discover, find a classmate and tap Message to start.</p>';
+ box.querySelectorAll('[data-chat]').forEach(b=>b.addEventListener('click',()=>{portal.mode='dm';portal.peer=b.dataset.chat;void renderChat(panel)}));
+}
+function chatCard(c){
+ return '<button type="button" class="pm-post-card" data-chat="'+esc(c.uid)+'"><span class="pm-avatar-circle">'+esc(initial(c.name))+'</span><span class="pm-post-main"><span class="pm-post-head"><b>'+esc(c.name||'VANES learner')+'</b>'+(c.combination?'<span class="pm-badge">'+esc(c.combination)+'</span>':'')+'<small>'+esc(fmtDate(c.lastAt))+'</small></span><span class="pm-post-preview">'+esc(c.last)+'</span></span>'+(Number(c.unread)?'<span class="pm-unread">'+Number(c.unread)+'</span>':'')+'</button>';
+}
+async function renderChat(panel){
+ const my=++paintToken;
+ const r=await api('/api/portal?'+profileQuery({thread:portal.peer}));
+ if(my!==paintToken||!panel.isConnected)return;
+ if(!r.ok){panel.innerHTML=errorCard(r);bindErrorCard(panel);return}
+ const peer=r.data.peer||{},msgs=r.data.messages||[],uid=myUid();
+ panel.innerHTML='<article class="panel pm-card"><div class="pm-thread-head"><button type="button" class="secondary-button" id="pmBack">← Chats</button>'+
+ '<span class="pm-avatar-circle">'+esc(initial(peer.name))+'</span>'+
+ '<div style="min-width:0"><b>'+esc(peer.name||'VANES learner')+'</b>'+(peer.combination?' <span class="pm-badge">'+esc(peer.combination)+'</span>':'')+
+ '<small style="display:block;opacity:.65">'+(peer.level?esc(peer.level)+' · ':'')+'private VANES chat</small></div>'+
+ '<button type="button" class="secondary-button" id="pmPeerProfile" style="margin-left:auto">Profile</button></div>'+
+ '<div class="pm-bubbles" id="pmBubbles">'+(msgs.length?msgs.map(m=>'<div class="pm-bubble'+(m.from_uid===uid?' own':'')+'">'+esc(m.body)+'<small>'+esc(fmtDate(m.created_at))+'</small></div>').join(''):'<p class="pm-empty">Say hello — only the two of you can see this chat.</p>')+'</div>'+
+ '<form class="pm-composer" id="pmDmForm"><input id="pmDmBody" maxlength="2000" placeholder="Write a message…" autocomplete="off" required><button class="primary-button" type="submit">Send</button></form>'+
+ '<p class="pm-error" id="pmDmStatus"></p></article>';
+ const bubbles=panel.querySelector('#pmBubbles');if(bubbles)bubbles.scrollTop=bubbles.scrollHeight;
+ const input=panel.querySelector('#pmDmBody');if(input)input.focus();
+ panel.querySelector('#pmBack').addEventListener('click',()=>{portal.mode='';portal.tab='chats';void renderPortal(panel)});
+ panel.querySelector('#pmPeerProfile').addEventListener('click',()=>{portal.mode='peer';portal.profileUid=portal.peer;void renderPeerProfile(panel)});
+ const form=panel.querySelector('#pmDmForm'),status=panel.querySelector('#pmDmStatus');
+ form.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const text=form.querySelector('#pmDmBody').value.trim();if(!text)return;
+  status.textContent='';
+  const r2=await api('/api/portal',{method:'POST',body:JSON.stringify({kind:'dm',toUid:portal.peer,body:text})});
+  if(!r2.ok){status.textContent=errText(r2);return}
+  void renderChat(panel);
+ });
+}
+async function renderPeerProfile(panel){
+ const my=++paintToken;
+ const r=await api('/api/portal?'+profileQuery({profile:portal.profileUid}));
+ if(my!==paintToken||!panel.isConnected)return;
+ if(!r.ok){panel.innerHTML=errorCard(r);bindErrorCard(panel);return}
+ const p=r.data.profile||{},mine=!!r.data.mine,posts=r.data.posts||[];
+ panel.innerHTML='<article class="panel pm-card"><button type="button" class="secondary-button" id="pmBack">← Back to Discover</button>'+
+ '<div class="pm-profile-head"><span class="pm-avatar-circle lg">'+esc(initial(p.name))+'</span>'+
+ '<div style="min-width:0"><h2 style="margin:0">'+esc(p.name||'VANES learner')+'</h2>'+
+ '<p class="support-copy" style="margin:4px 0 0">'+esc([p.level,p.combination].filter(Boolean).join(' · ')||'VANES learner')+' · '+(mine?'this is you':'classmate on VANES')+'</p></div>'+
+ (mine?'':'<button class="primary-button" type="button" id="pmMessage" style="margin-left:auto">Message →</button>')+'</div>'+
+ '<h3 style="margin-top:14px">Recent questions</h3>'+
+ (posts.length?posts.map(x=>'<button type="button" class="pm-subject-row" data-post="'+esc(x.id)+'" style="display:block;text-align:left"><b>'+esc(x.title)+'</b><small style="display:block;opacity:.7;margin-top:3px">'+esc(x.subject||'General study')+' · '+Number(x.reply_count||0)+' answers · '+esc(fmtDate(x.created_at))+'</small>'+(x.preview?'<small style="display:block;opacity:.6;margin-top:4px">'+esc(x.preview)+'</small>':'')+'</button>').join(''):'<p class="pm-empty">No questions posted yet.</p>')+
+ '</article>';
+ panel.querySelector('#pmBack').addEventListener('click',()=>{portal.mode='';portal.tab='discover';void renderPortal(panel)});
+ panel.querySelector('#pmMessage')?.addEventListener('click',()=>{portal.mode='dm';portal.peer=portal.profileUid;void renderChat(panel)});
+ panel.querySelectorAll('[data-post]').forEach(b=>b.addEventListener('click',()=>{portal.mode='post';portal.postId=b.dataset.post;void renderPostThread(panel)}));
 }
 
 /* Study tracker ----------------------------------------------------------- */
@@ -408,11 +568,11 @@ async function renderTracker(panel){
 }
 function progressModel(server){
  const map=new Map();
- const ensure=(name,level)=>{let s=map.get(name);if(!s){s={subject:name,level:level||'',totals:{seconds:0,aiQuestions:0,questions:0,correct:0},byDay:{}};map.set(name,s)}if(level&&!s.level)s.level=level;return s};
+ const ensure=(name,level)=>{let s=map.get(name);if(!s){s={subject:name,level:level||'',totals:{seconds:0,aiQuestions:0,questions:0,correct:0,sessions:0},byDay:{}};map.set(name,s)}if(level&&!s.level)s.level=level;return s};
  const add=(day,subject,level,vals)=>{
   const s=ensure(subject||'General study',level);
-  const d=s.byDay[day]=s.byDay[day]||{seconds:0,aiQuestions:0,questions:0,correct:0};
-  for(const k of ['seconds','aiQuestions','questions','correct']){const v=Math.max(0,Number(vals[k])||0);d[k]+=v;s.totals[k]+=v}
+  const d=s.byDay[day]=s.byDay[day]||{seconds:0,aiQuestions:0,questions:0,correct:0,sessions:0};
+  for(const k of ['seconds','aiQuestions','questions','correct','sessions']){const v=Math.max(0,Number(vals[k])||0);d[k]+=v;s.totals[k]+=v}
  };
  for(const s of server?.subjects||[]){ensure(s.subject,s.level);for(const d of s.days||[])add(d.day,s.subject,s.level,d)}
  const pend=read(PENDING,null)?.pending||{};
@@ -426,7 +586,7 @@ function paintTracker(panel,server){
  let picked=tracker.subject==='ALL'?null:subs.find(s=>s.subject===tracker.subject);
  if(tracker.subject!=='ALL'&&!picked)tracker.subject='ALL';
  const series=model.days.map(day=>{
-  const v={seconds:0,aiQuestions:0,questions:0,correct:0};
+  const v={seconds:0,aiQuestions:0,questions:0,correct:0,sessions:0};
   for(const s of (picked?[picked]:subs)){const x=s.byDay[day];if(!x)continue;for(const k of Object.keys(v))v[k]+=x[k]}
   return v;
  });
@@ -434,20 +594,22 @@ function paintTracker(panel,server){
  const value=v=>metric==='minutes'?Math.round(v.seconds/60):metric==='questions'?v.questions:v.aiQuestions;
  const unit=metric==='minutes'?' min':(metric==='questions'?' questions':' AI questions');
  const max=Math.max(1,...series.map(value));
- const tot={seconds:0,aiQuestions:0,questions:0,correct:0};
+ const tot={seconds:0,aiQuestions:0,questions:0,correct:0,sessions:0};
  for(const v of series)for(const k of Object.keys(tot))tot[k]+=v[k];
+ const streak=Math.max(0,Number(server?.streakDays)||0);
  const activeDays=series.filter(v=>v.seconds||v.aiQuestions||v.questions).length;
  const pending=pendingCount();
  const today=eatDay();
+ const tv=series[series.length-1]||{seconds:0,questions:0,aiQuestions:0,sessions:0};
  const bars=model.days.map((d,i)=>{
   const v=value(series[i]);
   const h=v>0?Math.max(4,Math.round(v/max*100)):0;
   return '<div class="pm-col" title="'+esc(d+' · '+v+unit+(picked?' · '+picked.subject:''))+'"><div class="pm-track"><div class="pm-bar'+(d===today?' today':'')+'" style="height:'+h+'%"></div></div><span>'+d.slice(8)+'</span></div>';
  }).join('');
- const subjectRows='<button type="button" class="pm-subject-row'+(tracker.subject==='ALL'?' on':'')+'" data-subject="ALL"><span>All subjects</span><small>'+fmtDur(tot.seconds)+' · '+tot.questions+' questions</small></button>'+
- subs.map(s=>'<button type="button" class="pm-subject-row'+(tracker.subject===s.subject?' on':'')+'" data-subject="'+esc(s.subject)+'"><span>'+esc(s.subject)+(s.level?' <small style="opacity:.6">('+esc(s.level)+')</small>':'')+'</span><small>'+fmtDur(s.totals.seconds)+' · '+s.totals.questions+' questions · '+(s.totals.questions?Math.round(s.totals.correct/s.totals.questions*100)+'% correct':'—')+'</small></button>').join('');
+ const subjectRows='<button type="button" class="pm-subject-row'+(tracker.subject==='ALL'?' on':'')+'" data-subject="ALL"><span>All subjects</span><small>'+fmtDur(tot.seconds)+' · '+tot.questions+' questions'+(tot.sessions?' · '+tot.sessions+' sessions':'')+'</small></button>'+
+ subs.map(s=>'<button type="button" class="pm-subject-row'+(tracker.subject===s.subject?' on':'')+'" data-subject="'+esc(s.subject)+'"><span>'+esc(s.subject)+(s.level?' <small style="opacity:.6">('+esc(s.level)+')</small>':'')+'</span><small>'+fmtDur(s.totals.seconds)+' · '+s.totals.questions+' questions · '+(s.totals.questions?Math.round(s.totals.correct/s.totals.questions*100)+'% correct':'—')+(s.totals.sessions?' · '+s.totals.sessions+' sessions':'')+'</small></button>').join('');
  panel.innerHTML='<article class="panel pm-card"><h2>Study tracker</h2>'+
- '<p class="support-copy">Built from your question attempts and your AI conversations, counted per subject and per day. Days follow Tanzania time (EAT), and today is highlighted in the histogram.</p>'+
+ '<p class="support-copy">Built from your question attempts, completed practice sessions and your AI conversations, counted per subject and per day. Days follow Tanzania time (EAT), and today is highlighted in the histogram. Switched on for signed-in learners — your parent sees exactly this from their link.</p>'+
  '<div class="pm-row"><select id="pmDays" style="max-width:170px"><option value="7">Last 7 days</option><option value="14">Last 14 days</option><option value="30">Last 30 days</option></select>'+
  '<select id="pmMetric" style="max-width:230px"><option value="minutes">Minutes studied</option><option value="questions">Questions attempted</option><option value="ai">AI questions asked</option></select>'+
  '<button class="secondary-button" type="button" id="pmTrackerRefresh">Refresh</button></div>'+
@@ -455,7 +617,10 @@ function paintTracker(panel,server){
  '<div class="pm-metric"><b>'+tot.questions+'</b><small>Questions attempted</small></div>'+
  '<div class="pm-metric"><b>'+(tot.questions?Math.round(tot.correct/tot.questions*100)+'%':'—')+'</b><small>Correct answers ('+tot.correct+')</small></div>'+
  '<div class="pm-metric"><b>'+tot.aiQuestions+'</b><small>AI questions asked</small></div>'+
+ '<div class="pm-metric"><b>'+tot.sessions+'</b><small>Practice sessions</small></div>'+
+ '<div class="pm-metric"><b>'+streak+'</b><small>Day streak</small></div>'+
  '<div class="pm-metric"><b>'+activeDays+'</b><small>Active days</small></div></div>'+
+ '<p class="pm-empty">Today ('+esc(today)+', EAT'+(picked?' · '+esc(picked.subject):'')+'): '+fmtDur(tv.seconds)+' studied · '+Number(tv.questions||0)+' question attempts · '+Number(tv.aiQuestions||0)+' AI questions'+(server?.lastActivity?' · last synced '+esc(fmtDate(server.lastActivity)):'')+'.</p>'+
  '<div class="pm-hist">'+bars+'</div>'+
  '<div class="pm-subject-list">'+subjectRows+'</div>'+
  (pending?'<p class="pm-empty">'+pending+' local entr'+(pending===1?'y':'ies')+' still waiting to sync to your account.</p>':'')+
@@ -469,22 +634,60 @@ function paintTracker(panel,server){
 }
 
 /* Parent access ----------------------------------------------------------- */
+/* Each parent is linked by their own phone number (never the learner's sign-in number), gets
+   the private progress link sent over WhatsApp, and up to two can follow at once. */
+let parentNotice='';
 async function renderParents(panel){
  const my=++paintToken;
- panel.innerHTML='<article class="panel pm-card"><h2>Parent access</h2><p class="pm-empty">Preparing your parent code…</p></article>';
- const r=await api('/api/parent/code',{method:'POST',body:JSON.stringify({learnerName:myName(),learnerLevel:profile()?.level||''})});
+ panel.innerHTML='<article class="panel pm-card"><h2>Parent access</h2><p class="pm-empty">Loading your parent links…</p></article>';
+ const r=await api('/api/parent/code');
  if(my!==paintToken||!panel.isConnected)return;
  if(!r.ok){panel.innerHTML=errorCard(r);bindErrorCard(panel);return}
- const code=r.data.code,url=r.data.url;
- const wa='https://wa.me/?text='+encodeURIComponent('Follow my VANES study progress: '+url);
+ paintParents(panel,r.data);
+}
+function paintParents(panel,data){
+ const my=paintToken;
+ const list=data?.parents||[],max=Number(data?.max)||2,full=list.length>=max;
+ const me=window.VANES_ACCOUNT?.session?.()||{};
+ const note=parentNotice;parentNotice='';
+ const row=p=>'<div class="pm-item"><div><b>'+esc(p.parentPhone||'Parent')+'</b><small>Linked '+esc(fmtDate(p.createdAt))+(p.learnerLevel?' · '+esc(p.learnerLevel):'')+'</small></div><div class="pm-row"><button class="secondary-button" type="button" data-wa="'+esc(p.whatsapp||'')+'">WhatsApp</button><button class="secondary-button" type="button" data-copyurl="'+esc(p.url||'')+'">Copy link</button><button class="secondary-button" type="button" data-openurl="'+esc(p.url||'')+'">Open</button><button class="secondary-button" type="button" data-remove="'+esc(p.code||'')+'">Remove</button></div></div>';
  panel.innerHTML='<article class="panel pm-card"><h2>Parent access</h2>'+
- '<p class="support-copy">Give this code — or the link — to your parent. They open it in any phone browser, no VANES account needed, and they see your real progress: minutes studied, questions attempted and correct answers, per subject, with the daily histogram. The view updates automatically as you study while signed in to your cloud account.</p>'+
- '<div class="pm-metric" style="margin:12px 0"><small>Your parent code</small><div class="pm-code">'+esc(code)+'</div></div>'+
- '<div class="pm-item" style="align-items:center"><div><b>Parent link</b><small>'+esc(url)+'</small></div><div class="pm-row"><button class="secondary-button" type="button" id="pmParentCopy">Copy link</button><button class="secondary-button" type="button" id="pmParentOpen">Open</button><button class="secondary-button" type="button" id="pmParentWa">Share on WhatsApp</button></div></div>'+
- '<p class="support-copy" style="margin-top:12px">Keep the code private — anyone with the link can see this study view. If it ever leaks, contact OB Tech-Labs to have it replaced. Only the subjects you study are shown, never your private conversations.</p></article>';
- panel.querySelector('#pmParentCopy').addEventListener('click',e=>copy(url,e.target));
- panel.querySelector('#pmParentOpen').addEventListener('click',()=>window.open(url,'_blank','noopener'));
- panel.querySelector('#pmParentWa').addEventListener('click',()=>window.open(wa,'_blank','noopener'));
+ '<p class="support-copy">Enter your parent\'s own WhatsApp number below — a different number from the one you signed in with. VANES links that parent and opens WhatsApp with the private study link ready to send, so they follow your progress at any time, from any phone, with no VANES account. They see minutes studied, questions attempted and correct answers, practice sessions and your day streak, per subject and per day — updated live as you study signed in. Up to '+max+' parents can be linked.</p>'+
+ (full?'<p class="pm-empty">'+max+' parents are linked already — that is the maximum. Remove one below to link a different number.</p>':
+ '<form id="pmParentForm" class="pm-row" style="margin:12px 0"><input id="pmParentPhone" type="tel" maxlength="25" placeholder="Parent\'s number, e.g. +255 7xx xxx xxx" style="flex:1;min-width:200px" autocomplete="tel" inputmode="tel"><button class="primary-button" type="submit">Link parent &amp; send on WhatsApp →</button></form>')+
+ '<div id="pmParentStatus" class="'+(note?'pm-ok':'pm-error')+'">'+esc(note)+'</div>'+
+ list.map(row).join('')+
+ '<p class="support-copy" style="margin-top:12px">Each parent link is private — remove a link to cut off access immediately. A parent who was linked before keeps the same link; sending it again on WhatsApp just re-opens their chat. Only your study counters are ever shown, never your chats or questions.</p></article>';
+ const status=panel.querySelector('#pmParentStatus');
+ const form=panel.querySelector('#pmParentForm');
+ form?.addEventListener('submit',async e=>{
+  e.preventDefault();
+  const input=panel.querySelector('#pmParentPhone'),phone=input.value.trim();
+  const digits=v=>String(v||'').replace(/\D/g,'');
+  if(digits(phone).length<9){status.className='pm-error';status.textContent='Enter your parent\'s full phone number, e.g. +255 7xx xxx xxx.';return}
+  const w=window.open('about:blank','_blank');
+  status.className='';status.textContent='Linking your parent…';
+  const r2=await api('/api/parent/code',{method:'POST',body:JSON.stringify({parentPhone:phone,learnerPhone:me.phone||'',learnerName:myName(),learnerLevel:profile()?.level||''})});
+  if(my!==paintToken||!panel.isConnected){try{w?.close()}catch(_){}return}
+  if(!r2.ok){try{w?.close()}catch(_){}status.className='pm-error';status.textContent=errText(r2);return}
+  const linked=(r2.data.parents||[]).find(p=>digits(p.parentPhone)===digits(phone))||(r2.data.parents||[]).slice(-1)[0];
+  if(linked?.whatsapp){if(w)w.location.href=linked.whatsapp;else window.open(linked.whatsapp,'_blank','noopener')}
+  else try{w?.close()}catch(_){}
+  parentNotice=r2.data.reused?'That parent was already linked — WhatsApp is opening with their private study link.':'Parent linked ✓ — WhatsApp is opening with the private study link ready to send.';
+  void renderParents(panel);
+ });
+ panel.querySelectorAll('[data-wa]').forEach(b=>b.addEventListener('click',()=>{const u=b.dataset.wa;if(u)window.open(u,'_blank','noopener')}));
+ panel.querySelectorAll('[data-copyurl]').forEach(b=>b.addEventListener('click',e=>{const u=b.dataset.copyurl;if(u)copy(u,e.target)}));
+ panel.querySelectorAll('[data-openurl]').forEach(b=>b.addEventListener('click',()=>{const u=b.dataset.openurl;if(u)window.open(u,'_blank','noopener')}));
+ panel.querySelectorAll('[data-remove]').forEach(b=>b.addEventListener('click',async()=>{
+  const code=b.dataset.remove;if(!code)return;
+  b.textContent='Removing…';
+  const r2=await api('/api/parent/code?code='+encodeURIComponent(code),{method:'DELETE'});
+  if(my!==paintToken||!panel.isConnected)return;
+  if(!r2.ok){status.className='pm-error';status.textContent=errText(r2);b.textContent='Remove';return}
+  parentNotice='Parent link removed — that parent can no longer open your progress.';
+  void renderParents(panel);
+ }));
 }
 
 /* Profile picture ---------------------------------------------------------- */

@@ -15,7 +15,10 @@ const fb=()=>window.VANES_FB;
 let deviceMode=false;
 const fbReady=()=>!deviceMode&&!!(fb()&&fb().ok);
 const session=()=>read(SESSION,null);
-const premium=()=>read(PREMIUM,null);
+/* Premium is a one-month pass: the local mirror carries the same end date the Worker keeps
+   in premium_until, so once the month is over the account is back to the normal free one. */
+const premium=()=>{const p=read(PREMIUM,null);if(!p)return null;const until=Number(p.until)||0;return until&&until<=Date.now()?null:p};
+const premiumDaysLeft=()=>{const p=read(PREMIUM,null);const until=Number(p?.until)||0;return until?Math.max(0,Math.ceil((until-Date.now())/86400000)):null};
 /* The free trial resets every 24 hours; expiry restarts the window from now. */
 function usage(){const u=read(USAGE,null);const now=Date.now();if(!u||now-Number(u.since||0)>TRIAL_HOURS*3600000)return {used:0,since:now};return u}
 /* The Worker's limit wins once it has been read, so VANES_FREE_LIMIT can be changed on the
@@ -216,7 +219,17 @@ async function syncQuota(){
  if(!q)return;
  serverLimit=Number(q.limit)||FREE_LIMIT;
  serverRenewsHours=Number(q.renewsInHours)||0;
- if(q.premium&&!premium())return void repaintAccountCard();
+ const until=Number(q.premiumUntil)||0,p=premium();
+ if(q.premium){
+  /* Keep the local mirror in step with the Worker: same pass, same end date. */
+  if(!p||until!==(Number(read(PREMIUM,null)?.until)||0))write(PREMIUM,{code:p?.code||read(PREMIUM,null)?.code||'',at:p?.at||Date.now(),until});
+  if(!p)return void repaintAccountCard();
+ }else if(p){
+  /* The month ran out on the Worker — the account returns to the normal free account. */
+  try{localStorage.removeItem(PREMIUM)}catch(_){}
+  window.dispatchEvent(new Event('vanes-premium-expired'));
+  return void repaintAccountCard();
+ }
  const u=usage();
  u.used=Math.max(Number(u.used||0),Number(q.used)||0);
  u.since=Number(u.since||Date.now());
@@ -230,15 +243,20 @@ async function syncQuota(){
 async function applyUpgradeCode(raw){
  const code=String(raw||'').trim().toUpperCase();
  if(!/^VANES-PRO-[A-Z0-9]{4,10}$/.test(code))return {ok:false,error:'Codes look like VANES-PRO-7K2M9'};
+ let until=0;
  if(fbReady()&&fb().user()){
   const q=await quotaRequest('POST',code);
   if(!q)return {ok:false,error:'Cannot reach VANES to check that code — try again.'};
   if(!q.premium)return {ok:false,error:'That code is not recognised by VANES.'};
   serverLimit=Number(q.limit)||FREE_LIMIT;
+  until=Number(q.premiumUntil)||0;
  }
- write(PREMIUM,{code:code,at:Date.now()});
+ /* The pass runs for one month: keep the same end date the Worker stores, so the app and the
+    server agree on when the account returns to the normal free account. */
+ if(!until)until=Date.now()+30*86400000;
+ write(PREMIUM,{code:code,at:Date.now(),until});
  window.VANES_SYNC?.pushNow();
- window.showToast?.('VANES Premium unlocked — thank you for supporting the app ✓');
+ window.showToast?.('VANES Premium unlocked — thank you for supporting the app ✓ This pass ends '+new Date(until).toLocaleDateString()+'.');
  renderAccountCard();
  window.dispatchEvent(new Event('vanes-premium-unlocked'));
  return {ok:true};
@@ -310,11 +328,12 @@ function renderAccountCard(){
  paint();
  function paint(){
   accountCardPainter=paint;
-  const s=session(),u=usage(),p=premium(),sync=window.VANES_SYNC?.status?.()||{enabled:false,failed:'',connecting:false};
+  const s=session(),u=usage(),p=premium(),daysLeft=premiumDaysLeft(),sync=window.VANES_SYNC?.status?.()||{enabled:false,failed:'',connecting:false};
   const how=s?.provider==='google'?'Google':(fbReady()?'email + password':'this device only');
+  const pass=p?(daysLeft===null?'':' · '+(daysLeft>0?daysLeft+' day'+(daysLeft===1?'':'s')+' left':'less than a day left')+', then back to the normal free account'):'';
   card.innerHTML='<div class="ios-row"><div class="ios-icon blue">👤</div><div class="ios-copy"><h2>Your VANES account</h2><p>'+
    (s?esc(s.name||s.email)+' · '+esc(s.phone||'no phone')+' · signed in with '+esc(how):'Not signed in')+'</p>'+
-   '<p>'+(p?'VANES Premium · code '+esc(p.code):'Free trial: '+Math.max(0,limitNow()-u.used)+' of '+limitNow()+' free AI answers · '+(serverRenewsHours>0?'renew in ~'+serverRenewsHours+'h':'renew every 24 hours'))+'</p>'+
+   '<p>'+(p?'VANES Premium'+(p.code?' · code '+esc(p.code):'')+pass+' · thank you for supporting VANES ♥':'Free trial: '+Math.max(0,limitNow()-u.used)+' of '+limitNow()+' free AI answers · '+(serverRenewsHours>0?'renew in ~'+serverRenewsHours+'h':'renew every 24 hours'))+'</p>'+
    '<p>'+(sync.connecting?'Cloud sync: connecting to your account…':sync.enabled?'Cloud sync: on — your data follows this account':(s?.uid?'Cloud sync: off — '+esc(sync.failed||'not started'):'Cloud sync: off — device account only'))+'</p></div></div>'+
    '<div class="vanes-account-row"><button type="button" class="secondary-button" id="vanesSyncNow" '+(sync.enabled&&!sync.connecting?'':'hidden')+'>Sync now</button>'+
    '<button type="button" class="secondary-button" id="vanesSignOut">Sign out</button>'+

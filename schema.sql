@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS vanes_quota (
  used INTEGER NOT NULL DEFAULT 0,
  premium INTEGER NOT NULL DEFAULT 0,
  premium_code TEXT,
+ premium_until INTEGER,
  updated_at TEXT NOT NULL
 );
 
@@ -85,6 +86,8 @@ CREATE TABLE IF NOT EXISTS vanes_portal_posts (
  uid TEXT NOT NULL,
  author TEXT,
  subject TEXT,
+ level TEXT,
+ combination TEXT,
  title TEXT NOT NULL,
  body TEXT NOT NULL,
  reply_count INTEGER NOT NULL DEFAULT 0,
@@ -109,6 +112,7 @@ CREATE TABLE IF NOT EXISTS vanes_progress_daily (
  ai_questions INTEGER NOT NULL DEFAULT 0,
  questions INTEGER NOT NULL DEFAULT 0,
  correct INTEGER NOT NULL DEFAULT 0,
+ sessions INTEGER NOT NULL DEFAULT 0,
  updated_at TEXT NOT NULL,
  PRIMARY KEY (uid,day,subject)
 );
@@ -120,6 +124,33 @@ CREATE TABLE IF NOT EXISTS vanes_parent_codes (
  learner_level TEXT,
  created_at TEXT NOT NULL,
  revoked INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS vanes_parent_links (
+ code TEXT PRIMARY KEY,
+ uid TEXT NOT NULL,
+ parent_phone TEXT NOT NULL,
+ learner_name TEXT,
+ learner_level TEXT,
+ created_at TEXT NOT NULL,
+ revoked INTEGER NOT NULL DEFAULT 0
+);
+
+CREATE TABLE IF NOT EXISTS vanes_portal_profiles (
+ uid TEXT PRIMARY KEY,
+ name TEXT,
+ level TEXT,
+ combination TEXT,
+ updated_at TEXT NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS vanes_portal_dms (
+ id TEXT PRIMARY KEY,
+ from_uid TEXT NOT NULL,
+ to_uid TEXT NOT NULL,
+ body TEXT NOT NULL,
+ created_at TEXT NOT NULL,
+ read_at TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_vanes_events_anonymous_id ON vanes_events(anonymous_id);
@@ -135,3 +166,5 @@ CREATE INDEX IF NOT EXISTS idx_vanes_portal_posts_subject ON vanes_portal_posts(
 CREATE INDEX IF NOT EXISTS idx_vanes_portal_replies_post ON vanes_portal_replies(post_id, created_at);
 CREATE INDEX IF NOT EXISTS idx_vanes_progress_daily_uid_day ON vanes_progress_daily(uid, day);
 CREATE INDEX IF NOT EXISTS idx_vanes_parent_codes_uid ON vanes_parent_codes(uid);
+CREATE INDEX IF NOT EXISTS vanes_portal_dms_pair ON vanes_portal_dms(from_uid, to_uid, created_at);
+CREATE INDEX IF NOT EXISTS vanes_portal_dms_to ON vanes_portal_dms(to_uid, read_at);

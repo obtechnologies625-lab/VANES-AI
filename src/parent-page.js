@@ -63,19 +63,29 @@ button.metric.on{border-color:#00cfff;color:#eafcff;background:#0d2a44}
 function el(tag,cls,text){var n=document.createElement(tag);if(cls)n.className=cls;if(text!=null)n.textContent=text;return n}
 function fmtMin(sec){var m=Math.round((Number(sec)||0)/60);return m>=60?(Math.floor(m/60)+'h '+(m%60)+'m'):m+' min'}
 function dayLabel(day){try{var d=new Date(day+'T00:00:00+03:00');return ['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()]+' '+d.getDate()}catch(e){return day}}
-var METRICS=[['minutes','Study time'],['questions','Questions tried'],['ai','AI questions'],['correct','Correct answers']];
+function fmtWhen(iso){try{var d=new Date(iso);if(isNaN(d.getTime()))return String(iso||'').slice(0,16).replace('T',' ');return d.toLocaleString(undefined,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'})}catch(e){return String(iso||'').slice(0,16).replace('T',' ')}}
+var METRICS=[['minutes','Study time'],['sessions','Sessions'],['questions','Questions tried'],['ai','AI questions'],['correct','Correct answers']];
 var state={code:'',days:14,metric:'minutes',subject:null,data:null};
 var codeCard=document.getElementById('codeCard'),codeInput=document.getElementById('codeInput'),codeError=document.getElementById('codeError'),out=document.getElementById('out');
-function value(m,d){if(m==='minutes')return Math.round((d.seconds||0)/60);if(m==='questions')return d.questions||0;if(m==='ai')return d.aiQuestions||0;return d.correct||0}
-function metricTotal(s,m){if(m==='minutes')return fmtMin(s.totals.seconds);if(m==='questions')return String(s.totals.questions);if(m==='ai')return String(s.totals.aiQuestions);return s.totals.questions?s.totals.correct+'/'+s.totals.questions: '0'}
+function value(m,d){if(m==='minutes')return Math.round((d.seconds||0)/60);if(m==='sessions')return d.sessions||0;if(m==='questions')return d.questions||0;if(m==='ai')return d.aiQuestions||0;return d.correct||0}
+function metricTotal(s,m){if(m==='minutes')return fmtMin(s.totals.seconds);if(m==='sessions')return String(s.totals.sessions||0);if(m==='questions')return String(s.totals.questions);if(m==='ai')return String(s.totals.aiQuestions);return s.totals.questions?s.totals.correct+'/'+s.totals.questions: '0'}
 function render(){
  out.innerHTML='';
  var d=state.data;if(!d)return;
  var head=el('div','card');
  head.appendChild(el('h2',null,d.learner.name+(d.learner.level?' · '+d.learner.level:'')));
- head.appendChild(el('p',null,'Progress for the last '+state.days+' days · last activity '+(d.learner.lastActivity?String(d.learner.lastActivity).slice(0,16).replace('T',' '):'not yet')));
+ head.appendChild(el('p',null,'Progress for the last '+state.days+' days · last activity '+(d.learner.lastActivity?fmtWhen(d.learner.lastActivity):'not yet')));
  out.appendChild(head);
- if(!d.subjects.length){var e=el('div','card');e.appendChild(el('div','empty','No study activity yet in this window. Once your child studies with VANES AI, each subject will appear here automatically.'));out.appendChild(e);return}
+ var today=d.today||{},streak=Math.max(0,Number(d.streakDays)||0);
+ var glance=el('div','card');
+ glance.appendChild(el('h2',null,'At a glance'));
+ var gsum=el('div','summary');
+ [['Today (EAT)',fmtMin(today.seconds)],['Day streak',streak+' day'+(streak===1?'':'s')],['Questions today',String(today.questions||0)],['AI questions today',String(today.aiQuestions||0)],['Sessions today',String(today.sessions||0)]].forEach(function(p){
+  var s=el('div','stat');s.appendChild(el('strong',null,p[1]));s.appendChild(el('span',null,p[0]));gsum.appendChild(s);
+ });
+ glance.appendChild(gsum);
+ if(!d.subjects.length){glance.appendChild(el('p',null,'No study activity yet in this window. Once your child studies with VANES AI, each subject will appear here automatically.'));out.appendChild(glance);return}
+ out.appendChild(glance);
  var chips=el('div','chips');
  d.subjects.slice().sort(function(a,b){return b.totals.seconds-a.totals.seconds}).forEach(function(s){
   var c=el('button','chip'+(state.subject===s.subject?' on':''),s.subject);
@@ -108,7 +118,7 @@ function render(){
  card.appendChild(hist);
  var legend=el('div','legend');legend.appendChild(el('span',null,dayLabel(d.days[0])));legend.appendChild(el('span',null,'Day by day · '+dayLabel(d.days[d.days.length-1])));card.appendChild(legend);
  var stats=el('div','summary');
- [['Study time',metricTotal(subj,'minutes')],['Questions tried',String(subj.totals.questions)],['Correct',subj.totals.questions?Math.round(subj.totals.correct/subj.totals.questions*100)+'%':'—'],['AI questions',String(subj.totals.aiQuestions)]].forEach(function(p){
+ [['Study time',metricTotal(subj,'minutes')],['Questions tried',String(subj.totals.questions)],['Correct',subj.totals.questions?Math.round(subj.totals.correct/subj.totals.questions*100)+'%':'—'],['AI questions',String(subj.totals.aiQuestions)],['Sessions',String(subj.totals.sessions||0)]].forEach(function(p){
   var s=el('div','stat');s.appendChild(el('strong',null,p[1]));s.appendChild(el('span',null,p[0]));stats.appendChild(s);
  });
  card.appendChild(stats);

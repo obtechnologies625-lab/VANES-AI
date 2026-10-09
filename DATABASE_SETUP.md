@@ -44,14 +44,15 @@ The API creates its tables automatically on the first request, so no migration s
 | Table | Holds |
 | --- | --- |
 | `vanes_users`, `vanes_events` | Anonymous analytics and the admin dashboard. |
-| `vanes_quota` | The server-side free-trial counter — 15 answers, reset after 24 hours — described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Also records Premium (`premium`, `premium_code`). |
+| `vanes_quota` | The server-side free-trial counter — 15 answers, reset after 24 hours — described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Also records Premium (`premium`, `premium_code`) and the end of the one-month pass (`premium_until`); when the pass ends the account returns to the normal free account automatically. |
 | `vanes_payments` | Airtel Money donation records: reference, phone number, amount, status and the code issued once the payment is confirmed. |
 | `vanes_payment_claims` | Receipt screenshots checked for manual donations: image hash, transaction id, amount, recipient, verdict, reason and the upgrade code issued when approved. The screenshot itself is never stored. |
 | `vanes_code_counter`, `vanes_premium_codes` | The OB Tech-Labs counter that mints `VANES-PRO-…` upgrade codes after a confirmed payment and binds each one to the first learner who redeems it. |
 | `vanes_short_links` | Premium study-link shortener: short code, destination URL, subject/title and click count. |
-| `vanes_portal_posts`, `vanes_portal_replies` | The Premium student portal — posted questions and answers. |
-| `vanes_progress_daily` | Per-learner, per-subject, per-day progress in Tanzania wall-clock days: study seconds, AI questions asked, questions attempted and correct answers. |
-| `vanes_parent_codes` | The 8-character codes a parent enters to view a learner's per-subject histogram, plus the learner's display name and level. |
+| `vanes_portal_posts`, `vanes_portal_replies` | The Premium student portal — posted questions and answers. Posts carry the author's level and combination so the feed can show each learner questions from their own combination. |
+| `vanes_portal_profiles`, `vanes_portal_dms` | The portal's small public card per learner (name, level, combination — for search and messaging) and the private direct messages between learners. |
+| `vanes_progress_daily` | Per-learner, per-subject, per-day progress in Tanzania wall-clock days: study seconds, AI questions asked, questions attempted, correct answers and completed practice sessions. |
+| `vanes_parent_codes`, `vanes_parent_links` | The 8-character codes a parent enters to view a learner's per-subject histogram plus the learner's display name and level. `vanes_parent_links` is the phone-based flow: each link stores the parent's own number (never the learner's sign-in number), up to two active links per learner. |
 
 Applying `schema.sql` is optional; it creates the same tables plus indexes that make the admin dashboard queries faster as the data grows:
 
@@ -96,4 +97,4 @@ If they are missing the workflow prints *"Cloudflare secrets are not configured;
 
 ## Privacy
 
-VANES uses an anonymous browser identifier. Question and answer content is not sent for improvement unless the learner explicitly enables the anonymised-learning-data option in Settings. Airtel Money payment records (reference, phone number, amount, status and the issued upgrade code) and parent access codes are stored in D1 only to operate the donation flow and the parent view; a parent code opens a read-only per-subject histogram and never exposes chats or account data. Names, phone numbers and payment credentials are not part of the analytics event payload.
+VANES uses an anonymous browser identifier. Question and answer content is not sent for improvement unless the learner explicitly enables the anonymised-learning-data option in Settings. Airtel Money payment records (reference, phone number, amount, status and the issued upgrade code) and parent access codes are stored in D1 only to operate the donation flow and the parent view; a parent code opens a read-only progress page (minutes studied, questions attempted and correct answers, practice sessions and day streak, per subject and per day) and never exposes chats or account data. Portal messages are visible only to the two learners who exchange them. Names, phone numbers and payment credentials are not part of the analytics event payload.
