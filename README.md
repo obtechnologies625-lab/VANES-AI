@@ -60,10 +60,24 @@ Supported common Advanced combinations include **PCM, PCB, PGM, CBG, CBA, CBN, E
 1. **Splash.** The VANES turbine wheel fades in, then a *MADE WITH — OB Tech-Labs — OB TECH ORG* panel fades in over it, then both fade away.
 2. **Account gate.** Sign in with **Firebase Authentication** — email + password, or the **Continue with Google** button — using full name, phone number, email and password. The app stays hidden behind the gate until the learner is signed in. If Firebase cannot be reached at all, the gate offers a *device-only* account so the PWA still opens offline.
 3. **Cloud sync.** A signed-in learner's profile, conversations, saved plans, Study Shelf and session history are mirrored to the Firestore document `learners/{uid}`, and restored on any other device (newest `syncedAt` wins). Settings shows whether sync is on, and why not when it is off.
-4. **Free trial.** Every learner gets **15 AI answers** per 30-day window, counted across chat turns, question sets and marking. For Firebase accounts the count lives in the Worker's D1 table `vanes_quota` and is checked against a verified Firebase ID token, so clearing browser storage does not create new free answers. When the trial is used the next AI call is answered with a support panel offering a donation (Airtel Money / Web3Forms) or an **upgrade code** in the form `VANES-PRO-XXXXX`, which the Worker validates against the `VANES_PREMIUM_CODES` secret before Premium is unlocked.
+4. **Free trial.** Every learner gets **15 AI answers**, and the allowance **resets 24 hours after the window started**, counted across chat turns, question sets and marking. For Firebase accounts the count lives in the Worker's D1 table `vanes_quota` and is checked against a verified Firebase ID token, so clearing browser storage does not create new free answers. When the trial is used the next AI call is answered with a support panel: a **3,500 TZS Airtel Money donation** — VANES pushes the USSD approval prompt to the learner's phone, and once Airtel confirms the payment the **OB Tech-Labs code counter issues a `VANES-PRO-XXXXX` upgrade code automatically** and shows it on screen — or an upgrade code typed in by hand. Counter codes are single-use: the first learner who redeems one owns it. Master codes listed in the `VANES_PREMIUM_CODES` secret always work.
 5. **Account card.** Settings shows who is signed in, the phone number on file, how many free answers are left, the cloud-sync state, and **Sync now**, **Sign out** and **Get Premium**.
 
 Firebase needs four console steps before all of this is live — creating the Firestore database, publishing `firestore.rules`, enabling the Email/Password and Google providers, and authorising the deploy domains. The click-path is in [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+
+## ★ VANES Premium
+
+Donating **3,500 TZS** with Airtel Money — or redeeming a `VANES-PRO-` upgrade code — unlocks the Premium tools for that signed-in learner. Premium lives server-side in `vanes_quota`, so it follows the account across devices and cannot be unlocked by editing `localStorage`. The workspace opens from the **★ Premium** item in the sidebar:
+
+| Tool | What it does |
+| --- | --- |
+| **Study-link shortener** | Paste a study link — a video lesson, a past paper — and VANES returns a short `…/s/CODE` link. It is a **302 redirect**: the destination is passed through byte-for-byte, so the source serves the video at its original quality. Click counts are kept per link. |
+| **Student portal** | Learners post subject questions and answer each other's on a shared board, filtered by subject. Posting and replying are rate-limited to 30 per hour. |
+| **Study tracker** | Per-subject progress built from real activity — AI questions asked, questions attempted, correct answers and study seconds — drawn as a **per-day histogram** for the chosen subject over 7–30 days. The tracker observes the learner's actual AI interactions, so there is nothing extra to fill in. |
+| **Parent access** | The learner generates an 8-character code; a parent opens `/parent` on any phone, enters the code and sees the same per-subject histogram — no account, app install or login needed. |
+| **Profile picture** | Change the profile picture from inside the Premium workspace: upload a photo from the device (resized on the device first) or pick one of the eight built-in VANES avatars. |
+
+Every Premium endpoint is checked server-side — a verified Firebase ID token plus the premium flag — before any links, posts, progress or codes are read or written.
 
 ## 🧠 AI Study Coach
 
@@ -149,12 +163,15 @@ Worker variables and secrets (`src/index.js`):
 | `WEB3FORMS_ACCESS_KEY` | No | Contact-form delivery via Web3Forms. A FormSubmit fallback is always available. |
 | `RESEND_API_KEY`, `CONTACT_FROM_EMAIL` | No | Alternative contact delivery via Resend. |
 | `TWILIO_ACCOUNT_SID`, `TWILIO_AUTH_TOKEN`, `TWILIO_FROM_NUMBER`, `OWNER_PHONE_NUMBER`, `OWNER_AIRTEL_NUMBER` | No | SMS notification of contact/donation requests. |
-| `DB` | No | D1 database binding for analytics and the `vanes_quota` trial counter — see [DATABASE_SETUP.md](DATABASE_SETUP.md). |
+| `AIRTEL_CLIENT_ID`, `AIRTEL_CLIENT_SECRET` | No | Airtel Money merchant credentials for the 3,500 TZS donation. **Worker secrets only — never put these in browser code.** Without them the donation panel falls back to the manual Airtel number with code entry. |
+| `VANES_AIRTEL_NUMBER` | No | Airtel Money number shown for manual donations. Default `+255688346613`. |
+| `VANES_DONATION_TZS` | No | Donation amount in TZS. Default `3500`. |
+| `DB` | No | D1 database binding for analytics, the `vanes_quota` trial counter, Airtel Money payments, the code counter, short links, the portal, progress and parent codes — see [DATABASE_SETUP.md](DATABASE_SETUP.md). |
 | `ADMIN_ANALYTICS_TOKEN` | No | Bearer token protecting `/api/admin/analytics`. |
 | `FIREBASE_PROJECT_ID` | No | Firebase project whose ID tokens `/api/chat` accepts. Default `vanes-ai`. |
 | `VANES_FREE_LIMIT` | No | Free AI answers per window. Default `15`. |
-| `VANES_TRIAL_DAYS` | No | Length of the trial window in days. Default `30`. |
-| `VANES_PREMIUM_CODES` | No | Comma-separated upgrade codes that unlock Premium server-side. |
+| `VANES_TRIAL_HOURS` | No | Length of the free-trial window in hours. Default `24`. `VANES_TRIAL_DAYS` still works as a longer override. |
+| `VANES_PREMIUM_CODES` | No | Comma-separated master upgrade codes that unlock Premium server-side. Counter-issued codes (`VANES-PRO-…`) work without being listed here. |
 
 Firebase itself is configured in the Firebase console, not here — see [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
 
@@ -162,7 +179,7 @@ Firebase itself is configured in the Firebase console, not here — see [FIREBAS
 
 ## 🔒 Privacy
 
-Learner profiles, saved plans, the Study Shelf, chat conversations and study activity are stored in the browser's `localStorage` on the learner's own device. When the learner signs in with a Firebase account, a copy of that same data is synced to their own Firestore document `learners/{uid}`; `firestore.rules` allows reads and writes of that document **only** by the signed-in learner who owns it, and denies everything else in the database. Passwords never reach the VANES Worker — Firebase Authentication handles them — and the Worker stores only the account uid together with its answer count. Theme, notification settings, the profile picture and the anonymous analytics identifier deliberately stay device-local and are not synced. Analytics events use an anonymous browser identifier; question and answer text is only included if the learner explicitly enables the anonymised-learning-data option in Settings. Names, phone numbers and payment credentials are not part of the analytics payload.
+Learner profiles, saved plans, the Study Shelf, chat conversations and study activity are stored in the browser's `localStorage` on the learner's own device. When the learner signs in with a Firebase account, a copy of that same data is synced to their own Firestore document `learners/{uid}`; `firestore.rules` allows reads and writes of that document **only** by the signed-in learner who owns it, and denies everything else in the database. Passwords never reach the VANES Worker — Firebase Authentication handles them. Premium data lives in the Worker's D1 database: Airtel Money payment records (reference, phone number, amount, status and the issued code), code counter records, short study links, student-portal posts and replies, per-day subject progress, and parent access codes. A parent code opens a **read-only** view of that learner's per-subject histogram — it cannot post, chat or change anything — since the page only ever returns the histogram and the learner's display name. Theme, notification settings, the profile picture and the anonymous analytics identifier deliberately stay device-local and are not synced. Analytics events use an anonymous browser identifier; question and answer text is only included if the learner explicitly enables the anonymised-learning-data option in Settings. Names, phone numbers and payment credentials are not part of the analytics payload.
 
 ## 📈 Analytics and the admin dashboard
 
@@ -195,15 +212,16 @@ When you change a cached file, bump its `?v=` cache-buster in `index.html`, and 
 | --- | --- |
 | `index.html`, `styles.css`, `vanes-*.css` | App shell and styling |
 | `vanes-runtime.js`, `vanes-study-system.js`, `full-chat.js` | Core app: views, planner/shelf/sessions, AI coach and conversations |
-| `vanes-access.js` | Brand splash, Firebase/device sign-in gate with phone + email + Google, and the free-trial meter with the donate/upgrade overlay |
+| `vanes-access.js` | Brand splash, Firebase/device sign-in gate with phone + email + Google, the 24-hour free-trial meter (15 answers, resets 24 hours after the window starts) and the donate/upgrade overlay |
 | `vanes-firebase.js` | Firebase Auth + Firestore bridge (ES module) exposing `window.VANES_FB` |
 | `vanes-sync.js` | Two-way `localStorage` ↔ Firestore sync for the signed-in learner's data |
 | `firestore.rules` | Access policy to paste into Firebase → Firestore → Rules |
 | `vanes-profile.js`, `vanes-product-upgrade.js`, `vanes-settings.js`, `vanes-donate.js`, `vanes-notifications.js`, `vanes-mobile.js` | Feature modules |
+| `vanes-premium.js` | Premium workspace: study-link shortener, student portal, per-subject histogram tracker, parent codes and profile picture |
 | `vanes-brand.js`, `vanes-send-fix.js`, `vanes-ai-context-fix.js`, `vanes-profile-enforcer.js` | Patch layers loaded after the modules above |
 | `vanes-pwa.js`, `sw.js`, `manifest.webmanifest`, `assets/icon-*.png` | Install prompt, offline banner, service worker and icons |
 | `assets/vanes-demo.svg` | The animated walkthrough shown at the top of this README |
-| `src/` | Cloudflare Worker: `index.js` (routes), `contact.js`, `analytics.js`, `firebase-auth.js` (ID-token verification), `quota.js` (server-side trial counter), `admin-page.js` (the token-gated admin dashboard) |
+| `src/` | Cloudflare Worker: `index.js` (routes), `contact.js`, `analytics.js`, `firebase-auth.js` (ID-token verification), `quota.js` (server-side trial counter), `codes.js` (OB Tech-Labs premium-code counter), `airtel.js` (Airtel Money collection + payment confirmation), `premium.js` (gated links/portal/progress/parent APIs), `parent-page.js` (the public parent histogram page), `admin-page.js` (the token-gated admin dashboard) |
 | `functions/api/chat.js`, `api/chat.js` | Cloudflare Pages and Vercel fallbacks |
 | `wrangler.toml`, `.assetsignore`, `vercel.json` | Deploy configuration |
 | `docs/`, `google-apps-script/`, `schema.sql`, `DATABASE_SETUP.md`, `FIREBASE_SETUP.md` | Supporting material, database and Firebase setup |
@@ -234,6 +252,7 @@ curl -s https://vanes-ai.obtechnologies625.workers.dev/sw.js | grep "const CACHE
 - **The admin dashboard is still locked.** Analytics events are stored (`vanes-ai-db` is bound as `DB`), but the `ADMIN_ANALYTICS_TOKEN` Worker secret has not been created, so `/api/admin/analytics` answers `401 ADMIN_ANALYTICS_TOKEN is not configured on this Worker.` and `/api/health` reports `adminAnalyticsConfigured:false`. Add the secret in Cloudflare → **Workers & Pages → vanes-ai → Settings → Variables and Secrets**, then open `/admin-analytics.html?key=YOUR_TOKEN`: [DATABASE_SETUP.md](DATABASE_SETUP.md).
 - **GitHub Pages publishes the Worker source.** `.assetsignore` does not apply to the Pages artifact, so `src/index.js`, `wrangler.toml` and `schema.sql` are publicly readable at `https://obtechnologies625-lab.github.io/VANES-AI/`. No secrets are exposed (API keys are Worker secrets). Pages stays enabled as a mirror by the owner's decision; the Worker URL is the production address.
 - **Firebase needs four console clicks to go live.** The code for real accounts, cloud sync and the server-side trial counter is in place, but the Firebase project still needs the Firestore database created, `firestore.rules` published, the Email/Password and Google providers enabled, and the deploy domains authorised. Until then VANES signs learners in against Firebase Auth where it can, syncs nothing, and falls back to a device-only account with an on-device counter. Step-by-step: [FIREBASE_SETUP.md](FIREBASE_SETUP.md).
+- **Airtel Money gateway is deployed but dormant until merchant credentials are set.** The donation panel, OB Tech-Labs code counter and Premium tools work now, but the USSD push needs an Airtel merchant account: add `AIRTEL_CLIENT_ID` and `AIRTEL_CLIENT_SECRET` as **secrets** in Cloudflare → **Workers & Pages → vanes-ai → Settings → Variables and Secrets**. Until then a donation falls back to the manual Airtel number with code entry, and Premium can still be unlocked by hand with a `VANES_PREMIUM_CODES` master code.
 - **GitHub Pages mirror cannot sync.** Firebase Auth requires the serving domain to be authorised, and the Pages mirror is only worth adding under Authorized domains if you intend to use it — otherwise learners there get device-only accounts.
 - **No test suite.** `node --check` catches syntax errors only; the Worker's runtime behaviour is unverified by CI.
 

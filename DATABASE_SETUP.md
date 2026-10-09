@@ -1,6 +1,6 @@
 # VANES AI database setup (Cloudflare Dashboard only)
 
-The repository contains a privacy-aware analytics API and a private admin dashboard. Both need a D1 database bound to the Worker. Without the binding every `/api/analytics` request returns `503 Analytics database is not configured yet.` and events are discarded — the app itself keeps working normally.
+The repository contains a privacy-aware analytics API, the server-side VANES Premium tools (Airtel Money payments, the OB Tech-Labs code counter, study-link shortener, student portal, progress tracking and parent codes) and a private admin dashboard. All of them need a D1 database bound to the Worker. Without the binding every `/api/analytics` request returns `503 Analytics database is not configured yet.` and events are discarded, and the premium endpoints answer `503` with a readable reason — the app itself keeps working normally.
 
 You do not need Command Prompt, Node.js or wrangler for any of this.
 
@@ -39,7 +39,20 @@ Then commit and push to `main`. The Cloudflare deploy workflow runs `wrangler de
 >
 > Equally, do not add the `[[d1_databases]]` block before the database exists — `wrangler deploy` fails on an unknown `database_id`, and a failed deploy leaves production on the previous version.
 
-The API creates the `vanes_users`, `vanes_events` and `vanes_quota` tables automatically on the first request, so no migration step is required. `vanes_quota` holds the server-side free-trial counter described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Applying `schema.sql` is optional; it creates the same tables plus indexes that make the admin dashboard queries faster as the data grows:
+The API creates its tables automatically on the first request, so no migration step is required:
+
+| Table | Holds |
+| --- | --- |
+| `vanes_users`, `vanes_events` | Anonymous analytics and the admin dashboard. |
+| `vanes_quota` | The server-side free-trial counter — 15 answers, reset after 24 hours — described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Also records Premium (`premium`, `premium_code`). |
+| `vanes_payments` | Airtel Money donation records: reference, phone number, amount, status and the code issued once the payment is confirmed. |
+| `vanes_code_counter`, `vanes_premium_codes` | The OB Tech-Labs counter that mints `VANES-PRO-…` upgrade codes after a confirmed payment and binds each one to the first learner who redeems it. |
+| `vanes_short_links` | Premium study-link shortener: short code, destination URL, subject/title and click count. |
+| `vanes_portal_posts`, `vanes_portal_replies` | The Premium student portal — posted questions and answers. |
+| `vanes_progress_daily` | Per-learner, per-subject, per-day progress in Tanzania wall-clock days: study seconds, AI questions asked, questions attempted and correct answers. |
+| `vanes_parent_codes` | The 8-character codes a parent enters to view a learner's per-subject histogram, plus the learner's display name and level. |
+
+Applying `schema.sql` is optional; it creates the same tables plus indexes that make the admin dashboard queries faster as the data grows:
 
 1. Open `vanes-ai-db` → **Console** tab.
 2. Paste the contents of `schema.sql`.
@@ -82,4 +95,4 @@ If they are missing the workflow prints *"Cloudflare secrets are not configured;
 
 ## Privacy
 
-VANES uses an anonymous browser identifier. Question and answer content is not sent for improvement unless the learner explicitly enables the anonymised-learning-data option in Settings. Names, phone numbers and payment credentials are not part of the analytics event payload.
+VANES uses an anonymous browser identifier. Question and answer content is not sent for improvement unless the learner explicitly enables the anonymised-learning-data option in Settings. Airtel Money payment records (reference, phone number, amount, status and the issued upgrade code) and parent access codes are stored in D1 only to operate the donation flow and the parent view; a parent code opens a read-only per-subject histogram and never exposes chats or account data. Names, phone numbers and payment credentials are not part of the analytics event payload.

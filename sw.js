@@ -1,4 +1,4 @@
-const CACHE = 'vanes-shell-v33';
+const CACHE = 'vanes-shell-v34';
 const BASE = new URL('./', self.registration.scope);
 const APP_FILES = [
   'index.html',
@@ -13,6 +13,7 @@ const APP_FILES = [
   'vanes-donate.js',
   'full-chat.js',
   'vanes-study-system.js',
+  'vanes-premium.js',
   'vanes-profile.js',
   'vanes-notifications.js',
   'vanes-settings.js',

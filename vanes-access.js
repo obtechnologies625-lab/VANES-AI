@@ -6,7 +6,7 @@
 (function(){
 'use strict';
 const ACCOUNTS='vanes-accounts-v1',SESSION='vanes-session-v1',USAGE='vanes-usage-v1',PREMIUM='vanes-premium-v1';
-const FREE_LIMIT=15,TRIAL_DAYS=30;
+const FREE_LIMIT=15,TRIAL_HOURS=24;
 const read=(k,f)=>{try{const v=JSON.parse(localStorage.getItem(k));return v??f}catch(_){return f}};
 const write=(k,v)=>localStorage.setItem(k,JSON.stringify(v));
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -16,10 +16,11 @@ let deviceMode=false;
 const fbReady=()=>!deviceMode&&!!(fb()&&fb().ok);
 const session=()=>read(SESSION,null);
 const premium=()=>read(PREMIUM,null);
-function usage(){const u=read(USAGE,null);const now=Date.now();if(!u||now-Number(u.since||0)>TRIAL_DAYS*86400000)return {used:0,since:now};return u}
+/* The free trial resets every 24 hours; expiry restarts the window from now. */
+function usage(){const u=read(USAGE,null);const now=Date.now();if(!u||now-Number(u.since||0)>TRIAL_HOURS*3600000)return {used:0,since:now};return u}
 /* The Worker's limit wins once it has been read, so VANES_FREE_LIMIT can be changed on the
    server without shipping a new client. */
-let serverLimit=0;
+let serverLimit=0,serverRenewsHours=0;
 const limitNow=()=>serverLimit||FREE_LIMIT;
 function left(){return premium()?Infinity:Math.max(0,limitNow()-usage().used)}
 
@@ -214,6 +215,7 @@ async function syncQuota(){
  const q=await quotaRequest('GET');
  if(!q)return;
  serverLimit=Number(q.limit)||FREE_LIMIT;
+ serverRenewsHours=Number(q.renewsInHours)||0;
  if(q.premium&&!premium())return void repaintAccountCard();
  const u=usage();
  u.used=Math.max(Number(u.used||0),Number(q.used)||0);
@@ -222,36 +224,47 @@ async function syncQuota(){
  repaintAccountCard();
 }
 
+/* Applies an OB Tech-Labs upgrade code. A cloud account has its code checked on the Worker
+   (OB Tech-Labs counter or VANES_PREMIUM_CODES), so editing localStorage cannot unlock
+   Premium. Device-only accounts have no server identity, so their code is a local unlock. */
+async function applyUpgradeCode(raw){
+ const code=String(raw||'').trim().toUpperCase();
+ if(!/^VANES-PRO-[A-Z0-9]{4,10}$/.test(code))return {ok:false,error:'Codes look like VANES-PRO-7K2M9'};
+ if(fbReady()&&fb().user()){
+  const q=await quotaRequest('POST',code);
+  if(!q)return {ok:false,error:'Cannot reach VANES to check that code — try again.'};
+  if(!q.premium)return {ok:false,error:'That code is not recognised by VANES.'};
+  serverLimit=Number(q.limit)||FREE_LIMIT;
+ }
+ write(PREMIUM,{code:code,at:Date.now()});
+ window.VANES_SYNC?.pushNow();
+ window.showToast?.('VANES Premium unlocked — thank you for supporting the app ✓');
+ renderAccountCard();
+ window.dispatchEvent(new Event('vanes-premium-unlocked'));
+ return {ok:true};
+}
+
 function upgradeOverlay(){
  if(document.querySelector('#vanesUpgrade'))return;
  const el=document.createElement('div');el.id='vanesUpgrade';
- el.innerHTML='<div class="vanes-upgrade-card"><h2>Your free trial is finished</h2><p>VANES gives every learner '+limitNow()+' free AI answers. To keep asking, supporting marking and generating question sets, support the app — every contribution keeps VANES free for the next student.</p>'+
+ el.innerHTML='<div class="vanes-upgrade-card"><h2>Your free answers are used up</h2><p>VANES gives every learner '+limitNow()+' free AI answers every 24 hours — they come back at no cost. To keep asking right now, support the app with a one-time '+((window.VANES_DONATE&&window.VANES_DONATE.amount)||3500)+' TZS Airtel Money donation; every contribution keeps VANES free for the next student.</p>'+
  '<div class="vanes-upgrade-row"><button class="primary-button" type="button" id="vanesUpgradeDonate">Support VANES ♥</button><button class="secondary-button" type="button" id="vanesUpgradeLater">Not now</button></div>'+
  '<div class="vanes-upgrade-row"><input id="vanesUpgradeCode" placeholder="Upgrade code from OB Tech-Labs" maxlength="40"><button class="secondary-button" type="button" id="vanesUpgradeApply">Unlock</button></div>'+
- '<p class="vanes-upgrade-note" style="color:#8fa7c7;font-size:11px">After donating, OB Tech-Labs sends you an upgrade code by email or WhatsApp.</p></div>';
+ '<p class="vanes-upgrade-note" style="color:#8fa7c7;font-size:11px">Donate with Airtel Money and your VANES-PRO upgrade code appears on screen the moment the payment is confirmed.</p></div>';
  document.body.appendChild(el);
  el.querySelector('#vanesUpgradeDonate').addEventListener('click',()=>{
+  el.remove();
+  if(window.VANES_DONATE?.open)return void window.VANES_DONATE.open();
   const t=document.createElement('button');t.setAttribute('data-donate-vanes','');t.hidden=true;document.body.appendChild(t);t.click();t.remove();
  });
  el.querySelector('#vanesUpgradeLater').addEventListener('click',()=>el.remove());
  el.querySelector('#vanesUpgradeApply').addEventListener('click',async()=>{
   const input=el.querySelector('#vanesUpgradeCode');
-  const code=input.value.trim().toUpperCase();
-  if(!/^VANES-PRO-[A-Z0-9]{4,10}$/.test(code)){input.value='';input.placeholder='Codes look like VANES-PRO-7K2M9';return}
-  /* A Firebase account has its code checked against VANES_PREMIUM_CODES on the Worker, so
-     editing localStorage cannot unlock Premium. Device-only accounts have no server
-     identity, so their code stays a local unlock. */
-  if(fbReady()&&fb().user()){
-   input.disabled=true;
-   const q=await quotaRequest('POST',code);
-   input.disabled=false;
-   if(!q){input.placeholder='Cannot reach VANES to check that code — try again.';return}
-   if(!q.premium){input.value='';input.placeholder='That code is not recognised by VANES.';return}
-   serverLimit=Number(q.limit)||FREE_LIMIT;
-  }
-  write(PREMIUM,{code:code,at:Date.now()});el.remove();
-  window.VANES_SYNC?.pushNow();
-  window.showToast?.('VANES Premium unlocked — thank you for supporting the app ✓');renderAccountCard();
+  input.disabled=true;
+  const r=await applyUpgradeCode(input.value);
+  input.disabled=false;
+  if(!r.ok){input.value='';input.placeholder=r.error||'That code did not work.';return}
+  el.remove();
  });
 }
 
@@ -301,7 +314,7 @@ function renderAccountCard(){
   const how=s?.provider==='google'?'Google':(fbReady()?'email + password':'this device only');
   card.innerHTML='<div class="ios-row"><div class="ios-icon blue">👤</div><div class="ios-copy"><h2>Your VANES account</h2><p>'+
    (s?esc(s.name||s.email)+' · '+esc(s.phone||'no phone')+' · signed in with '+esc(how):'Not signed in')+'</p>'+
-   '<p>'+(p?'VANES Premium · code '+esc(p.code):'Free trial: '+Math.max(0,limitNow()-u.used)+' of '+limitNow()+' AI answers left this month')+'</p>'+
+   '<p>'+(p?'VANES Premium · code '+esc(p.code):'Free trial: '+Math.max(0,limitNow()-u.used)+' of '+limitNow()+' free AI answers · '+(serverRenewsHours>0?'renew in ~'+serverRenewsHours+'h':'renew every 24 hours'))+'</p>'+
    '<p>'+(sync.connecting?'Cloud sync: connecting to your account…':sync.enabled?'Cloud sync: on — your data follows this account':(s?.uid?'Cloud sync: off — '+esc(sync.failed||'not started'):'Cloud sync: off — device account only'))+'</p></div></div>'+
    '<div class="vanes-account-row"><button type="button" class="secondary-button" id="vanesSyncNow" '+(sync.enabled&&!sync.connecting?'':'hidden')+'>Sync now</button>'+
    '<button type="button" class="secondary-button" id="vanesSignOut">Sign out</button>'+
@@ -337,7 +350,7 @@ async function boot(){
   if(!session())gate();else unlock();
  };
  splash(start);
- window.VANES_ACCOUNT={session:session,left:left,premium:premium,upgrade:upgradeOverlay,firebase:()=>({ready:fbReady(),detail:fbReady()?{projectId:fb().projectId,sdk:fb().sdk,uid:fb().user()?.uid||''}:{error:fb()?.initError||'Firebase module did not load'}}),signOut:async()=>{window.VANES_SYNC?.stop();localStorage.removeItem(SESSION);if(fbReady())await fb().signOut();location.reload()}};
+ window.VANES_ACCOUNT={session:session,left:left,premium:premium,upgrade:upgradeOverlay,applyCode:applyUpgradeCode,firebase:()=>({ready:fbReady(),detail:fbReady()?{projectId:fb().projectId,sdk:fb().sdk,uid:fb().user()?.uid||''}:{error:fb()?.initError||'Firebase module did not load'}}),signOut:async()=>{window.VANES_SYNC?.stop();localStorage.removeItem(SESSION);if(fbReady())await fb().signOut();location.reload()}};
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',boot,{once:true});else boot();
 })();

@@ -1,21 +1,23 @@
+import { codeUnlocks } from './codes.js';
+
 /* Authoritative free-trial meter. The on-device counter in vanes-access.js is a
    convenience copy; this table in D1 is what actually decides whether a learner can ask
    another question, so clearing browser storage cannot buy more answers. */
-const DEFAULT_FREE_LIMIT=15,DEFAULT_TRIAL_DAYS=30;
+const DEFAULT_FREE_LIMIT=15,DEFAULT_TRIAL_HOURS=24;
 
 function limit(env){
   const n=Number(env?.VANES_FREE_LIMIT);
   return Number.isFinite(n)&&n>0?Math.floor(n):DEFAULT_FREE_LIMIT;
 }
 
+/* The free trial resets every 24 hours. VANES_TRIAL_HOURS fine-tunes that window;
+   VANES_TRIAL_DAYS still works as a longer override for anyone who set it earlier. */
 function periodMs(env){
+  const h=Number(env?.VANES_TRIAL_HOURS);
+  if(Number.isFinite(h)&&h>0)return h*3600000;
   const d=Number(env?.VANES_TRIAL_DAYS);
-  return (Number.isFinite(d)&&d>0?d:DEFAULT_TRIAL_DAYS)*86400000;
-}
-
-function premiumCodes(env){
-  const raw=typeof env?.VANES_PREMIUM_CODES==="string"?env.VANES_PREMIUM_CODES:"";
-  return new Set(raw.split(/[,\s]+/).map(c=>c.trim().toUpperCase()).filter(Boolean));
+  if(Number.isFinite(d)&&d>0)return d*86400000;
+  return DEFAULT_TRIAL_HOURS*3600000;
 }
 
 let tableReady=false;
@@ -47,18 +49,19 @@ function view(state,env){
     used:state.used,
     left:state.premium?null:Math.max(0,max-state.used),
     premium:state.premium,
-    renewsInDays:Math.max(0,Math.ceil((state.periodStart+periodMs(env)-Date.now())/86400000))
+    renewsInHours:Math.max(0,Math.ceil((state.periodStart+periodMs(env)-Date.now())/3600000))
   };
 }
 
 /* Reads the learner's quota, honouring an upgrade code the Worker recognises.
+   Codes come from the OB Tech-Labs counter (D1) or the VANES_PREMIUM_CODES secret.
    Returns null when enforcement is impossible (no database) so chat keeps working. */
 export async function readQuota(db,uid,env,code){
   if(!db||!uid)return null;
   await ensureTable(db);
   const state=await load(db,uid,env);
   const offered=String(code||"").trim().toUpperCase();
-  if(!state.premium&&offered&&premiumCodes(env).has(offered)){
+  if(!state.premium&&offered&&await codeUnlocks(db,uid,env,offered)){
     state.premium=true;state.premiumCode=offered;
     await save(db,state);
   }
@@ -71,7 +74,7 @@ export async function consumeQuota(db,uid,env,code){
   await ensureTable(db);
   const state=await load(db,uid,env);
   const offered=String(code||"").trim().toUpperCase();
-  if(!state.premium&&offered&&premiumCodes(env).has(offered)){state.premium=true;state.premiumCode=offered}
+  if(!state.premium&&offered&&await codeUnlocks(db,uid,env,offered)){state.premium=true;state.premiumCode=offered}
   if(!state.premium)state.used=Math.min(state.used+1,limit(env));
   await save(db,state);
   return view(state,env);

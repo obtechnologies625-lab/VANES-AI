@@ -4,7 +4,7 @@ VANES uses Firebase for three things:
 
 1. **Real accounts** — email + password and Google sign-in (`vanes-firebase.js`).
 2. **Cloud sync** — the learner's profile, conversations, study plans and shelf follow the account to any device (`vanes-sync.js` → Firestore collection `learners`).
-3. **A tamper-proof free trial** — the Cloudflare Worker verifies the learner's Firebase ID token and keeps the answer count in the D1 table `vanes_quota`, so clearing browser storage cannot create new free answers.
+3. **A tamper-proof free trial** — the Cloudflare Worker verifies the learner's Firebase ID token and keeps the answer count in the D1 table `vanes_quota` (15 answers, reset after 24 hours), so clearing browser storage cannot create new free answers.
 
 The Firebase **web config is already in the repository** (`vanes-firebase.js`). That config is a public identifier, not a credential — Firebase ships it to every browser, and access is governed by the Firestore rules below. Never add a *service account* key or any private key to this repo.
 
@@ -58,10 +58,10 @@ Missing domains produce *auth/unauthorized-domain* or a Google pop-up that close
 | --- | --- | --- |
 | `FIREBASE_PROJECT_ID` | Variable | Defaults to `vanes-ai`. Only set it if the Firebase project is ever renamed. |
 | `VANES_FREE_LIMIT` | Variable | Free AI answers per window. Default `15`. |
-| `VANES_TRIAL_DAYS` | Variable | Length of the window in days. Default `30`. |
-| `VANES_PREMIUM_CODES` | **Secret** | Comma-separated upgrade codes you hand out after a donation, e.g. `VANES-PRO-7K2M9,VANES-PRO-Q4XD2`. A code unlocks Premium only if it appears here. |
+| `VANES_TRIAL_HOURS` | Variable | Length of the free-trial window in hours. Default `24`. `VANES_TRIAL_DAYS` still works as a longer override. |
+| `VANES_PREMIUM_CODES` | **Secret** | Comma-separated **master** upgrade codes you hand out yourself, e.g. `VANES-PRO-7K2M9,VANES-PRO-Q4XD2`. A master code unlocks Premium only if it appears here. |
 
-`VANES_PREMIUM_CODES` is the important one: the app asks the Worker to validate an upgrade code, so a learner editing their own `localStorage` cannot unlock Premium. Until the secret exists, codes are refused and learners stay on the free trial.
+`VANES_PREMIUM_CODES` is the important one for master codes: the app asks the Worker to validate an upgrade code, so a learner editing their own `localStorage` cannot unlock Premium. Counter-issued codes (`VANES-PRO-…`) are different — the OB Tech-Labs counter mints them after a confirmed Airtel Money payment and binds each one to the first learner who redeems it, so they work as long as the `DB` binding exists even when the secret does not.
 
 ## 6. Verify it worked
 
@@ -71,7 +71,7 @@ Missing domains produce *auth/unauthorized-domain* or a Google pop-up that close
 3. Ask VANES one question, then open
    `https://vanes-ai.obtechnologies625.workers.dev/api/health`
    and check `"quotaEnabled":true`.
-4. `GET /api/quota` with a signed-in learner's token returns `{limit, used, left, premium, renewsInDays}` — the same numbers the account card shows.
+4. `GET /api/quota` with a signed-in learner's token returns `{limit, used, left, premium, renewsInHours}` — the same numbers the account card shows.
 
 ## 7. Cleaning up test accounts
 
