@@ -44,6 +44,21 @@ CREATE TABLE IF NOT EXISTS vanes_code_counter (
  count INTEGER NOT NULL DEFAULT 0
 );
 
+CREATE TABLE IF NOT EXISTS vanes_payment_claims (
+ id TEXT PRIMARY KEY,
+ uid TEXT NOT NULL,
+ image_hash TEXT NOT NULL UNIQUE,
+ txn_id TEXT,
+ amount INTEGER,
+ payer_name TEXT,
+ recipient TEXT,
+ model TEXT,
+ verdict TEXT NOT NULL,
+ reason TEXT,
+ code TEXT,
+ created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS vanes_premium_codes (
  code TEXT PRIMARY KEY,
  counter INTEGER NOT NULL DEFAULT 0,
@@ -113,6 +128,8 @@ CREATE INDEX IF NOT EXISTS idx_vanes_events_created_at ON vanes_events(created_a
 CREATE INDEX IF NOT EXISTS idx_vanes_users_name ON vanes_users(user_name);
 CREATE INDEX IF NOT EXISTS idx_vanes_payments_status ON vanes_payments(status, created_at);
 CREATE INDEX IF NOT EXISTS idx_vanes_payments_airtel_id ON vanes_payments(airtel_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_vanes_claims_txn ON vanes_payment_claims(txn_id) WHERE txn_id IS NOT NULL AND verdict='APPROVED';
+CREATE INDEX IF NOT EXISTS idx_vanes_claims_uid ON vanes_payment_claims(uid, created_at);
 CREATE INDEX IF NOT EXISTS idx_vanes_short_links_uid ON vanes_short_links(uid);
 CREATE INDEX IF NOT EXISTS idx_vanes_portal_posts_subject ON vanes_portal_posts(subject, created_at);
 CREATE INDEX IF NOT EXISTS idx_vanes_portal_replies_post ON vanes_portal_replies(post_id, created_at);

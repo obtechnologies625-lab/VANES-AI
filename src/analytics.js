@@ -39,6 +39,10 @@ export async function handleAdminAnalytics(request,env){
   const totals=await env.DB.prepare('SELECT (SELECT COUNT(*) FROM vanes_events) AS events, (SELECT COUNT(*) FROM vanes_users) AS users').first();
   const users=await env.DB.prepare('SELECT anonymous_id,user_name,level,combination,first_seen_at,last_seen_at FROM vanes_users ORDER BY last_seen_at DESC LIMIT 200').all();
   const recent=await env.DB.prepare('SELECT anonymous_id,user_name,event,payload,created_at FROM vanes_events ORDER BY id DESC LIMIT 100').all();
-  return json({ok:true,totals,users:users.results||[],recent:recent.results||[]},200,headers);
+  /* The claims table only exists after the first screenshot is uploaded, so this read
+     must tolerate a missing table instead of failing the whole dashboard. */
+  const paymentTotals=await env.DB.prepare("SELECT COUNT(*) AS checks, SUM(CASE WHEN verdict='APPROVED' THEN 1 ELSE 0 END) AS approved FROM vanes_payment_claims").first().catch(()=>null);
+  const claims=await env.DB.prepare('SELECT created_at,uid,verdict,reason,amount,recipient,txn_id,code,model FROM vanes_payment_claims ORDER BY created_at DESC LIMIT 50').all().catch(()=>({results:[]}));
+  return json({ok:true,totals,users:users.results||[],recent:recent.results||[],payments:{checks:Number(paymentTotals?.checks)||0,approved:Number(paymentTotals?.approved)||0,claims:claims.results||[]}},200,headers);
  }catch(e){return json({error:'Analytics database read failed.',detail:e?.message||String(e)},500,headers)}
 }

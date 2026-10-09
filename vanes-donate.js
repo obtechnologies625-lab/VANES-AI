@@ -3,14 +3,16 @@
    Money Collection API; the OB Tech-Labs counter issues the VANES-PRO upgrade code,
    which this modal shows and applies automatically once Airtel confirms the payment.
    When merchant credentials are not configured on the Worker, it falls back to the
-   manual Airtel number so donations still work. */
+   manual Airtel number (JULIUS FIKIRINI NKWABI): the learner pays with Airtel Money
+   and uploads the receipt screenshot, which the Worker verifies automatically before
+   the counter issues the code and the app applies it. */
 (function(){
 'use strict';
-const AMOUNT=3500,DEFAULT_MANUAL='+255688346613',POLL_MS=5000,MAX_POLLS=48;
+const AMOUNT=3500,DEFAULT_MANUAL='+255688346613',DEFAULT_MANUAL_NAME='JULIUS FIKIRINI NKWABI',USSD='*150*60#',POLL_MS=5000,MAX_POLLS=48;
 const ANALYTICS='/api/analytics';
 const apiBase=()=>String(window.VANES_CHAT_ENDPOINT||location.origin+'/api/chat').replace(/\/api\/chat$/,'');
 const esc=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-let manualNumber=DEFAULT_MANUAL,modal=null,pollTimer=null,polls=0,busy=false;
+let manualNumber=DEFAULT_MANUAL,manualName=DEFAULT_MANUAL_NAME,modal=null,pollTimer=null,polls=0,busy=false;
 const state={ref:'',phone:'',done:false};
 function anonymousId(){try{let id=localStorage.getItem('vanes-anonymous-id-v1');if(!id){id=(crypto.randomUUID?crypto.randomUUID():'vanes-'+Date.now()+'-'+Math.random().toString(36).slice(2));localStorage.setItem('vanes-anonymous-id-v1',id)}return id}catch(_){return 'vanes-session-'+Date.now()}}
 function userName(){try{const p=JSON.parse(localStorage.getItem('vanes-learner-profile-v1')||'null');return String(p?.name||localStorage.getItem('vanes-user-name')||'').trim().slice(0,120)}catch(_){return ''}}
@@ -24,6 +26,7 @@ function ensureStyle(){
  if(document.getElementById('vanes-donate-style'))return;
  const s=document.createElement('style');s.id='vanes-donate-style';s.textContent=
  '#vanesDonateModal{position:fixed;inset:0;z-index:99999;display:grid;place-items:center}'+
+ '#vanesDonateModal[hidden]{display:none}'+
  '.vanes-donate-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.72);backdrop-filter:blur(6px)}'+
  '.vanes-donate-card{position:relative;width:min(440px,calc(100% - 32px));max-height:90vh;overflow:auto;padding:30px;border:1px solid rgba(255,255,255,.14);border-radius:24px;background:#101522;color:#fff;box-shadow:0 24px 80px rgba(0,0,0,.55);text-align:center}'+
  '.vanes-donate-icon{font-size:34px;margin-bottom:8px}.vanes-donate-card h2{margin:4px 0 10px}.vanes-donate-card p{line-height:1.6;color:#c9d0dd}'+
@@ -86,7 +89,7 @@ async function start(){
  catch(_){d={error:'Could not reach VANES. Check your connection and try again.'}}
  busy=false;
  if(r&&r.ok&&d.reference){state.phone=phoneVal;state.ref=String(d.reference);track('donate_airtel_started',{reference:state.ref});waiting();return}
- if(r&&r.status===503&&d.manual){manualNumber=String(d.manual?.number||manualNumber||DEFAULT_MANUAL);track('donate_airtel_manual',{reason:'not-configured'});manual('');return}
+ if(r&&r.status===503&&d.manual){manualNumber=String(d.manual?.number||manualNumber||DEFAULT_MANUAL);if(d.manual?.name)manualName=String(d.manual.name);track('donate_airtel_manual',{reason:'not-configured'});manual('');return}
  if(r&&r.status===429&&state.ref){waiting();return}
  if(btn){btn.disabled=false;btn.textContent='Send payment request →'}
  if(err)err.textContent=String(d.error||'Could not start the payment. Please try again.')+(d.detail?' — '+d.detail:'');
@@ -131,28 +134,79 @@ function failed(){
  modal.querySelector('#vanesDonateRetry').addEventListener('click',form);
 }
 
-async function success(code){
+async function success(code,fromShot){
  state.done=true;stopPoll();track('donate_airtel_success',{reference:state.ref,code});
- view('<div class="vanes-donate-icon">✓</div><p class="eyebrow">PAYMENT CONFIRMED</p><h2>VANES Premium unlocked</h2>'+
- '<p>Thank you for supporting VANES AI. Your OB Tech-Labs counter upgrade code:</p>'+
+ view('<div class="vanes-donate-icon">✓</div><p class="eyebrow">'+(fromShot?'PAYMENT VERIFIED · RECORDED':'PAYMENT CONFIRMED')+'</p><h2>VANES Premium unlocked</h2>'+
+ '<p>'+(fromShot?'Your Airtel Money receipt was verified and the payment is saved in the VANES database. Your OB Tech-Labs upgrade code:':'Thank you for supporting VANES AI. Your OB Tech-Labs counter upgrade code:')+'</p>'+
  '<div class="vanes-donate-number"><span>Upgrade code</span><strong>'+esc(code)+'</strong><small>Auto-applied to this account</small></div>'+
- '<p class="vanes-donate-note" id="vanesDonateNote">Keep this code safe — if VANES ever asks again after signing out, enter it under Support VANES.</p>'+
+ '<p class="vanes-donate-note" id="vanesDonateNote">'+(fromShot?'Payment recorded in the VANES database. ':'')+'Keep this code safe — if VANES ever asks again after signing out, enter it under Support VANES.</p>'+
  '<button type="button" class="primary-button" id="vanesDonateDone">Continue studying →</button>');
  modal.querySelector('#vanesDonateDone').addEventListener('click',close);
  const result=await window.VANES_ACCOUNT?.applyCode?.(code);
  if(result&&!result.ok){const note=modal.querySelector('#vanesDonateNote');if(note)note.textContent='Keep this code safe — '+(result.error||'enter it again if VANES asks.')}
 }
 
+/* The screenshot is downscaled in the browser so the upload stays small on mobile data. */
+function downscaleShot(file){
+ return new Promise((resolve,reject)=>{
+  const url=URL.createObjectURL(file),img=new Image();
+  img.onload=()=>{
+   URL.revokeObjectURL(url);
+   try{
+    const scale=Math.min(1,1600/Math.max(img.width||1,img.height||1));
+    const w=Math.max(1,Math.round((img.width||1)*scale)),h=Math.max(1,Math.round((img.height||1)*scale));
+    const c=document.createElement('canvas');c.width=w;c.height=h;
+    const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,w,h);ctx.drawImage(img,0,0,w,h);
+    let data=c.toDataURL('image/jpeg',.85);
+    if(data.length>4200000)data=c.toDataURL('image/jpeg',.7);
+    resolve(data);
+   }catch(err){reject(err)}
+  };
+  img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('image'))};
+  img.src=url;
+ });
+}
+const UPLOAD_LABEL='I have paid — verify my receipt 📷';
+async function verifyShot(file){
+ if(busy||!file)return;
+ const status=modal.querySelector('#vanesDonateShotStatus'),up=modal.querySelector('#vanesDonateUpload'),err=modal.querySelector('#vanesDonateError');
+ const say=t=>{if(status)status.textContent=t};
+ if(err)err.textContent='';
+ if(file.size>20*1024*1024){if(err)err.textContent='That photo is too large — upload the normal screenshot of the Airtel Money message.';return}
+ if(!(window.VANES_FB&&window.VANES_FB.ok&&window.VANES_FB.user())){if(err)err.textContent='Sign in to VANES with email or Google first (Account → Sign in) so the verified Premium is saved to your account, then upload the screenshot again.';return}
+ busy=true;if(up){up.disabled=true;up.textContent='Checking your payment…'}
+ say('Reading your Airtel Money receipt…');
+ let data='';
+ try{data=await downscaleShot(file)}
+ catch(_){busy=false;if(up){up.disabled=false;up.textContent=UPLOAD_LABEL}if(err)err.textContent='VANES could not read that image file. Take a fresh screenshot and try again.';return}
+ const token=await idToken();
+ let r=null,d={};
+ try{r=await fetch(apiBase()+'/api/pay/verify',{method:'POST',headers:{'Content-Type':'application/json',...(token?{Authorization:'Bearer '+token}:{})},body:JSON.stringify({image:data})});d=await r.json().catch(()=>({}))}
+ catch(_){d={error:'Could not reach VANES. Check your connection and try again.'}}
+ busy=false;if(up){up.disabled=false;up.textContent=UPLOAD_LABEL}
+ if(r&&r.ok&&d.ok&&d.code){track('donate_shot_verified',{transaction:d.transactionId||'',amount:d.amount||''});success(String(d.code),true);return}
+ track('donate_shot_rejected',{code:d.code||'',reason:String(d.error||'').slice(0,80)});
+ say('');
+ if(err)err.textContent=String(d.error||'That screenshot could not be verified. Upload the receipt again, or type the code OB Tech-Labs sent you.');
+}
 function manual(reason){
  stopPoll();state.ref='';state.done=false;
  track('donate_airtel_manual',{reason:reason||'manual'});
  view('<div class="vanes-donate-icon">♥</div><p class="eyebrow">SUPPORT VANES AI</p><h2 id="vanesDonateTitle">Donate 3,500 TZS</h2>'+
- '<p>Send <strong>3,500 TZS</strong> with Airtel Money to the OB Tech-Labs number below. Once the payment is received, the OB Tech-Labs counter issues your VANES-PRO code — type it here to unlock Premium.</p>'+
- '<div class="vanes-donate-number"><span>Airtel Money</span><strong>'+esc(manualNumber)+'</strong></div>'+
- '<button type="button" class="primary-button" id="vanesDonateCopy">Copy number →</button>'+
+ '<p>Send <strong>3,500 TZS</strong> with Airtel Money to <strong>'+esc(manualName)+'</strong> on the OB Tech-Labs number below — then upload the payment screenshot and VANES verifies it and opens Premium automatically.</p>'+
+ '<div class="vanes-donate-number"><span>Airtel Money · '+esc(manualName)+'</span><strong>'+esc(manualNumber)+'</strong><small>Send exactly 3,500 TZS<button type="button" class="vanes-donate-copy" id="vanesDonateCopy">Copy</button></small></div>'+
+ '<button type="button" class="primary-button" id="vanesDonatePay">Pay 3,500 TZS with Airtel Money →</button>'+
+ '<p class="vanes-donate-note">Tap Pay, dial <strong>'+USSD+'</strong> → Send Money → <strong>'+esc(manualNumber)+'</strong> → 3,500 TZS.</p>'+
+ '<button type="button" class="secondary-button" id="vanesDonateUpload" style="margin-top:12px">'+UPLOAD_LABEL+'</button>'+
+ '<input id="vanesDonateFile" type="file" accept="image/*" hidden>'+
+ '<p class="vanes-donate-note" id="vanesDonateShotStatus">Upload the Airtel Money receipt screenshot — VANES reads it, records the payment on the database and unlocks Premium on this account.</p>'+
+ '<p class="vanes-donate-note" style="margin-top:14px">Already have an upgrade code from OB Tech-Labs? Type it here:</p>'+
  '<div class="vanes-donate-code"><input id="vanesDonateCodeInput" maxlength="40" placeholder="VANES-PRO-0001ABCD"><button type="button" class="secondary-button" id="vanesDonateCodeApply">Unlock</button></div>'+
  '<p class="vanes-donate-note" id="vanesDonateError"></p>');
  modal.querySelector('#vanesDonateCopy').addEventListener('click',copyManual);
+ modal.querySelector('#vanesDonatePay').addEventListener('click',()=>{track('donate_pay_dial',{ussd:USSD});location.href='tel:'+encodeURIComponent(USSD)});
+ modal.querySelector('#vanesDonateUpload').addEventListener('click',()=>modal.querySelector('#vanesDonateFile').click());
+ modal.querySelector('#vanesDonateFile').addEventListener('change',e=>{const f=e.target.files&&e.target.files[0];e.target.value='';if(f)verifyShot(f)});
  modal.querySelector('#vanesDonateCodeApply').addEventListener('click',async()=>{
   const input=modal.querySelector('#vanesDonateCodeInput'),err=modal.querySelector('#vanesDonateError');
   const code=String(input?.value||'').trim().toUpperCase();

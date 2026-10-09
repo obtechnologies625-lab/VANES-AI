@@ -46,6 +46,7 @@ The API creates its tables automatically on the first request, so no migration s
 | `vanes_users`, `vanes_events` | Anonymous analytics and the admin dashboard. |
 | `vanes_quota` | The server-side free-trial counter — 15 answers, reset after 24 hours — described in [FIREBASE_SETUP.md](FIREBASE_SETUP.md). Also records Premium (`premium`, `premium_code`). |
 | `vanes_payments` | Airtel Money donation records: reference, phone number, amount, status and the code issued once the payment is confirmed. |
+| `vanes_payment_claims` | Receipt screenshots checked for manual donations: image hash, transaction id, amount, recipient, verdict, reason and the upgrade code issued when approved. The screenshot itself is never stored. |
 | `vanes_code_counter`, `vanes_premium_codes` | The OB Tech-Labs counter that mints `VANES-PRO-…` upgrade codes after a confirmed payment and binds each one to the first learner who redeems it. |
 | `vanes_short_links` | Premium study-link shortener: short code, destination URL, subject/title and click count. |
 | `vanes_portal_posts`, `vanes_portal_replies` | The Premium student portal — posted questions and answers. |

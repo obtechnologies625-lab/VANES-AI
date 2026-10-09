@@ -12,6 +12,7 @@ const PAY_URL="https://openapi.airtel.africa/merchant/v1/payments/";
 const STATUS_URL="https://openapi.airtel.africa/standard/v1/payments/";
 const DEFAULT_AMOUNT=3500;
 const DEFAULT_MANUAL_NUMBER="+255688346613";
+const DEFAULT_MANUAL_NAME="JULIUS FIKIRINI NKWABI";
 const PENDING_MAX_MS=30*60000;
 
 let tokenCache={token:"",expiresAt:0};
@@ -27,6 +28,10 @@ export function donationAmount(env){
 export function donationNumber(env){
   const raw=typeof env?.VANES_AIRTEL_NUMBER==="string"?env.VANES_AIRTEL_NUMBER.trim():"";
   return raw||DEFAULT_MANUAL_NUMBER;
+}
+export function donationName(env){
+  const raw=typeof env?.VANES_AIRTEL_NAME==="string"?env.VANES_AIRTEL_NAME.trim():"";
+  return raw||DEFAULT_MANUAL_NAME;
 }
 /* Tanzanian mobile numbers only: 0XXXXXXXXX or +255XXXXXXXXX with a 6/7 prefix. */
 export function normalizePhone(raw){
@@ -153,7 +158,7 @@ export async function handlePayAirtel(request,env){
   const headers=cors(request.headers.get("Origin"));
   if(request.method==="OPTIONS")return new Response(null,{status:204,headers});
   if(request.method!=="POST")return json({error:"Method not allowed"},405,headers);
-  const amount=donationAmount(env),manual={number:donationNumber(env),amount};
+  const amount=donationAmount(env),manual={number:donationNumber(env),name:donationName(env),amount};
   if(!airtelConfigured(env)||!env.DB)return json({ok:false,configured:false,code:"airtel-not-configured",amount,manual},503,headers);
   let uid="";
   const token=bearerToken(request);
